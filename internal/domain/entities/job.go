@@ -12,14 +12,14 @@ var ErrInvalidStatus = errors.New("invalid status")
 var ErrEmptyTask = errors.New("task cannot be empty")
 
 type Job struct {
-	ID        uint      `gorm:"primaryKey;autoIncrement"`
+	ID        string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Task      string    `gorm:"not null"`
-	Status    string    `gorm:"default:pending"` // pending, processing, completed, failed
+	Status    string    `gorm:"default:pending"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }
 
-// NewJob returns a value type instead of a pointer to reduce heap escapes
+// NewJob creates a new Job instance
 func NewJob(task string) Job {
 	return Job{
 		Task:      task,
@@ -30,16 +30,16 @@ func NewJob(task string) Job {
 }
 
 // UpdateStatus updates job status and validates input
-func (j *Job) UpdateStatus(status string) (Job, error) {
+func (j *Job) UpdateStatus(status string) error {
 	if status != "pending" && status != "processing" && status != "completed" && status != "failed" {
-		return *j, ErrInvalidStatus
+		return ErrInvalidStatus
 	}
 	j.Status = status
 	j.UpdatedAt = time.Now()
-	return *j, nil
+	return nil
 }
 
-// Migrate without pointer to db to avoid heap escape
-func Migrate(db gorm.DB) error {
+// Migrate the Job table
+func Migrate(db *gorm.DB) error {
 	return db.AutoMigrate(&Job{})
 }

@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -10,22 +11,35 @@ import (
 	"gorm.io/gorm"
 )
 
-// InitDB initializes the database connection
+var (
+	dbInstance *gorm.DB
+	once       sync.Once
+)
+
+// InitDB initializes and returns a singleton database connection
 func InitDB() (*gorm.DB, error) {
-	if err := godotenv.Load(); err != nil {
-		logrus.Warn("No .env file found")
-	}
+	var err error
 
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		logrus.Fatal("DATABASE_URL is not set in .env")
-	}
+	once.Do(func() {
+		// Load environment variables
+		if err = godotenv.Load(); err != nil {
+			logrus.Warn("No .env file found")
+		}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
-	}
+		dsn := os.Getenv("DATABASE_URL")
+		if dsn == "" {
+			logrus.Fatal("DATABASE_URL is not set in .env")
+		}
 
-	logrus.Info("Connected to PostgreSQL database")
-	return db, nil
+		// Open database connection
+		dbInstance, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err != nil {
+			err = fmt.Errorf("failed to connect to database: %w", err)
+			return
+		}
+
+		logrus.Info("Connected to PostgreSQL database")
+	})
+
+	return dbInstance, err
 }
