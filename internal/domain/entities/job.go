@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -12,7 +13,7 @@ var ErrInvalidStatus = errors.New("invalid status")
 var ErrEmptyTask = errors.New("task cannot be empty")
 
 type Job struct {
-	ID        string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Task      string    `gorm:"not null"`
 	Status    string    `gorm:"default:pending"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
@@ -37,6 +38,13 @@ func (j *Job) UpdateStatus(status string) error {
 	j.Status = status
 	j.UpdatedAt = time.Now()
 	return nil
+}
+
+func (j *Job) Execute() {
+	j.UpdateStatus("processing")
+	time.Sleep(2 * time.Second) // Simulating job execution
+	j.UpdateStatus("completed")
+
 }
 
 // Migrate the Job table

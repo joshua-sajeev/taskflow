@@ -43,3 +43,13 @@ func InitDB() (*gorm.DB, error) {
 
 	return dbInstance, err
 }
+
+func CloseDB() {
+	sqlDB, err := dbInstance.DB()
+	if err != nil {
+		logrus.Error("Failed to get database instance:", err)
+		return
+	}
+	sqlDB.Close()
+	logrus.Info("Database connection closed")
+}

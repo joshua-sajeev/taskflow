@@ -3,6 +3,7 @@ package repositories
 import (
 	"taskflow/internal/domain/entities"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -22,7 +23,7 @@ func (r *GormJobRepository) Create(job *entities.Job) error {
 }
 
 // FindByID retrieves a job by ID.
-func (r *GormJobRepository) FindByID(id uint) (*entities.Job, error) {
+func (r *GormJobRepository) FindByID(id uuid.UUID) (*entities.Job, error) {
 	var job entities.Job
 	err := r.db.First(&job, id).Error
 	if err != nil {
@@ -37,6 +38,6 @@ func (r *GormJobRepository) Update(job *entities.Job) error {
 }
 
 // Delete removes a job by ID.
-func (r *GormJobRepository) Delete(id uint) error {
+func (r *GormJobRepository) Delete(id uuid.UUID) error {
 	return r.db.Delete(&entities.Job{}, id).Error
 }
