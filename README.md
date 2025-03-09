@@ -27,7 +27,7 @@ Ensure you have the following installed:
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/taskflow.git
+git clone https://github.com/joshua-sajeev/taskflow.git
 cd taskflow
 ```
 
