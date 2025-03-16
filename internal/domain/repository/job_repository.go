@@ -12,4 +12,5 @@ type JobRepository interface {
 	FindByID(id uuid.UUID) (*entities.Job, error)
 	Update(job *entities.Job) error
 	Delete(id uuid.UUID) error
+	CountJobsByStatus() (pending int64, completed int64, err error)
 }

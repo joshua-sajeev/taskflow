@@ -9,7 +9,7 @@ import (
 
 type WorkerPool struct {
 	numWorkers int
-	jobQueue   *JobQueue
+	JobQueue   *JobQueue
 	repo       repositories.JobRepository
 	wg         sync.WaitGroup
 	quit       chan struct{}
@@ -18,7 +18,7 @@ type WorkerPool struct {
 func NewWorkerPool(numWorkers int, jobQueue *JobQueue, repo repositories.JobRepository) *WorkerPool {
 	return &WorkerPool{
 		numWorkers: numWorkers,
-		jobQueue:   jobQueue,
+		JobQueue:   jobQueue,
 		repo:       repo,
 		quit:       make(chan struct{}),
 	}
@@ -42,7 +42,7 @@ func (wp *WorkerPool) worker(id int) {
 	logrus.Println("Worker started:", id) // Add this
 	for {
 		select {
-		case jobID := <-wp.jobQueue.GetQueue(): // Get job ID
+		case jobID := <-wp.JobQueue.GetQueue(): // Get job ID
 			logrus.Println("Worker ", id, "Processing job:", jobID)
 
 			//  Fetch the full job object using the job ID
@@ -65,4 +65,7 @@ func (wp *WorkerPool) worker(id int) {
 			return
 		}
 	}
+}
+func (wp *WorkerPool) ActiveWorkers() int {
+	return wp.numWorkers
 }

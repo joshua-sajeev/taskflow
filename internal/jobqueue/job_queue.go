@@ -18,7 +18,7 @@ func NewJobQueue(size int) *JobQueue {
 func (jq *JobQueue) Enqueue(jobID uuid.UUID) {
 	select {
 	case jq.queue <- jobID:
-		logrus.Println("Job enqueued:", jobID, "Queue size", len(jq.queue))
+		logrus.Println("Job enqueued:", jobID, "Queue size", jq.Size())
 	default:
 		logrus.Println("Queue full! Dropping job:", jobID)
 	}
@@ -30,4 +30,8 @@ func (jq *JobQueue) Dequeue() uuid.UUID {
 
 func (jq *JobQueue) GetQueue() chan uuid.UUID {
 	return jq.queue
+}
+
+func (jq *JobQueue) Size() int {
+	return len(jq.queue)
 }

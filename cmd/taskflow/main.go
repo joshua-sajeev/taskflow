@@ -32,7 +32,10 @@ func main() {
 
 	// Initialize Router
 	jobHandler := handlers.NewJobHandler(repo, *jobQueue)
-	router := bootstrap.SetupRouter(jobHandler)
+
+	dashboardHanlder := handlers.NewDashboardHandler(repo, workerPool)
+
+	router := bootstrap.SetupRouter(jobHandler, dashboardHanlder)
 
 	// Start HTTP Server
 	port := os.Getenv("PORT")

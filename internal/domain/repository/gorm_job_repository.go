@@ -41,3 +41,17 @@ func (r *GormJobRepository) Update(job *entities.Job) error {
 func (r *GormJobRepository) Delete(id uuid.UUID) error {
 	return r.db.Delete(&entities.Job{}, id).Error
 }
+
+func (r *GormJobRepository) CountJobsByStatus() (pending int64, completed int64, err error) {
+	err = r.db.Model(&entities.Job{}).Where("status = ?", "pending").Count(&pending).Error
+	if err != nil {
+		return 0, 0, err
+	}
+
+	err = r.db.Model(&entities.Job{}).Where("status = ?", "completed").Count(&completed).Error
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return pending, completed, nil
+}

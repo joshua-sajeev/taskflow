@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"taskflow/internal/domain/entities"
 	repositories "taskflow/internal/domain/repository"
@@ -41,6 +42,6 @@ func (j *JobHandler) CreateJob(c *gin.Context) {
 
 	// Enqueue job for processing
 	j.jobQueue.Enqueue(job.ID)
-
+	log.Println(job)
 	c.JSON(http.StatusCreated, job)
 }
