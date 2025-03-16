@@ -20,11 +20,8 @@ func main() {
 	_ = godotenv.Load() // Load environment variables
 
 	// Initialize Database
-	database, err := bootstrap.InitDatabase()
-	if err != nil {
-		logrus.Fatal("Failed to connect to the database")
-	}
-	repo := repositories.NewGormJobRepository(database)
+	redisClient := bootstrap.InitRedis()
+	repo := repositories.NewRedisJobRepository(redisClient)
 
 	// Initialize Workers
 	jobQueue, workerPool := bootstrap.InitWorkerPool(repo)
