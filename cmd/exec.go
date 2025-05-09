@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"taskflow/exec"
 
@@ -10,10 +11,19 @@ import (
 // execCmd represents the exec command
 var execCmd = &cobra.Command{
 	Use:   "exec",
-	Short: "Let's you run bash command",
+	Short: "Let's you run bash commands",
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			fmt.Println("Error: No command provided")
+			return
+		}
+
 		for _, command := range args {
-			exec.Exec(os.Stdout, command)
+			err := exec.Exec(os.Stdout, command)
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
 		}
 	},
 }
