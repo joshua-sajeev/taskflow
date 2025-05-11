@@ -1,0 +1,3 @@
+@every 1s | echo "hello"
+36 14 * * 6 | echo "new"
+
