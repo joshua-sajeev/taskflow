@@ -12,8 +12,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	docs "taskflow/docs"
 )
 
 func getEnv(key, fallback string) string {
@@ -23,6 +26,11 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+// @title           TaskFlow API
+// @version         1.0
+// @description     API server for managing tasks in the TaskFlow application.
+// @host            localhost:8080
+// @BasePath        /api
 func main() {
 	user := getEnv("MYSQL_USER", "appuser")
 	pass := getEnv("MYSQL_PASSWORD", "apppassword")
@@ -37,7 +45,7 @@ func main() {
 	var err error
 
 	// Retry logic
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 		if err != nil {
 			log.Println("DB open error:", err)
@@ -82,11 +90,16 @@ func main() {
 
 	// Router setup
 	r := gin.Default()
-	r.POST("/tasks", h.CreateTask)
-	r.GET("/tasks/:id", h.GetTask)
-	r.GET("/tasks", h.ListTasks)
-	r.PATCH("/tasks/:id/status", h.UpdateStatus)
-
+	docs.SwaggerInfo.BasePath = "/api"
+	api := r.Group("/api")
+	{
+		api.POST("/tasks", h.CreateTask)
+		api.GET("/tasks/:id", h.GetTask)
+		api.GET("/tasks", h.ListTasks)
+		api.PATCH("/tasks/:id/status", h.UpdateStatus)
+		api.DELETE("/tasks/:id", h.Delete)
+	}
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	// Start the HTTP server
 	if err := r.Run(":8080"); err != nil {
 		log.Fatalf("Server failed: %v", err)
