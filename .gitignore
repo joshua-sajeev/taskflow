@@ -1,2 +1,4 @@
 .env
 internal/db/.env
+docker-compose.overridde.yml
+Dockerfile

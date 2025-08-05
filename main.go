@@ -34,7 +34,7 @@ func getEnv(key, fallback string) string {
 func main() {
 	user := getEnv("MYSQL_USER", "appuser")
 	pass := getEnv("MYSQL_PASSWORD", "apppassword")
-	host := getEnv("MYSQL_HOST", "mysql")
+	host := getEnv("MYSQL_HOST", "172.18.0.2")
 	port := getEnv("MYSQL_PORT", "3306")
 	dbname := getEnv("MYSQL_DATABASE", "taskdb")
 
