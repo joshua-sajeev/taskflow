@@ -2,5 +2,9 @@ package common
 
 // ErrorResponse defines standard error format
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Message string `json:"error"`
+}
+
+func (e ErrorResponse) Error() string {
+	return e.Message
 }

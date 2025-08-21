@@ -32,11 +32,11 @@ func NewTaskHandler(s *service.TaskService) *TaskHandler {
 func (h *TaskHandler) CreateTask(c *gin.Context) {
 	var t task.Task
 	if err := c.ShouldBindJSON(&t); err != nil {
-		c.JSON(http.StatusBadRequest, common.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, common.ErrorResponse{Message: err.Error()})
 		return
 	}
 	if err := h.service.CreateTask(&t); err != nil {
-		c.JSON(http.StatusBadRequest, common.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, common.ErrorResponse{Message: err.Error()})
 		return
 	}
 	c.JSON(http.StatusCreated, t)
@@ -56,7 +56,7 @@ func (h *TaskHandler) GetTask(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	t, err := h.service.GetTask(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, common.ErrorResponse{Error: "Task not found"})
+		c.JSON(http.StatusNotFound, common.ErrorResponse{Message: "Task not found"})
 		return
 	}
 	c.JSON(http.StatusOK, t)
@@ -74,7 +74,7 @@ func (h *TaskHandler) GetTask(c *gin.Context) {
 func (h *TaskHandler) ListTasks(c *gin.Context) {
 	tasks, err := h.service.ListTasks()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, common.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, common.ErrorResponse{Message: err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, tasks)
@@ -97,11 +97,11 @@ func (h *TaskHandler) UpdateStatus(c *gin.Context) {
 		Status string `json:"status"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, common.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, common.ErrorResponse{Message: err.Error()})
 		return
 	}
 	if err := h.service.UpdateStatus(id, body.Status); err != nil {
-		c.JSON(http.StatusBadRequest, common.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, common.ErrorResponse{Message: err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "status updated"})
@@ -123,16 +123,16 @@ func (h *TaskHandler) Delete(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, common.ErrorResponse{Error: "Invalid ID"})
+		c.JSON(http.StatusBadRequest, common.ErrorResponse{Message: "Invalid ID"})
 		return
 	}
 
 	err = h.service.Delete(id)
 	if err != nil {
 		if err.Error() == "record not found" {
-			c.JSON(http.StatusNotFound, common.ErrorResponse{Error: "Task not found"})
+			c.JSON(http.StatusNotFound, common.ErrorResponse{Message: "Task not found"})
 		} else {
-			c.JSON(http.StatusInternalServerError, common.ErrorResponse{Error: "Couldn't delete task"})
+			c.JSON(http.StatusInternalServerError, common.ErrorResponse{Message: "Couldn't delete task"})
 		}
 		return
 	}
