@@ -91,6 +91,8 @@ func main() {
 	// Router setup
 	r := gin.Default()
 	docs.SwaggerInfo.BasePath = "/api"
+	docs.SwaggerInfo.Host = "localhost:8080"
+	docs.SwaggerInfo.Schemes = []string{"http"}
 	api := r.Group("/api")
 	{
 		api.POST("/tasks", h.CreateTask)
