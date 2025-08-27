@@ -24,16 +24,13 @@
                 "summary": "List all tasks",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "List of tasks retrieved successfully",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/task.Task"
-                            }
+                            "$ref": "#/definitions/dto.ListTasksResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/common.ErrorResponse"
                         }
@@ -59,7 +56,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/task.Task"
+                            "$ref": "#/definitions/dto.CreateTaskRequest"
                         }
                     }
                 ],
@@ -81,10 +78,7 @@
         },
         "/tasks/{id}": {
             "get": {
-                "description": "Get details of a specific task by ID",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Returns details of a specific task by ID",
                 "produces": [
                     "application/json"
                 ],
@@ -94,8 +88,10 @@
                 "summary": "Get a task by ID",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
-                        "description": "Task ID",
+                        "example": 1,
+                        "description": "Task ID (\u003e=1)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -103,13 +99,19 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Task retrieved successfully",
                         "schema": {
-                            "$ref": "#/definitions/task.Task"
+                            "$ref": "#/definitions/dto.GetTaskResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/common.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Task not found",
                         "schema": {
                             "$ref": "#/definitions/common.ErrorResponse"
                         }
@@ -118,9 +120,6 @@
             },
             "delete": {
                 "description": "Delete a task by its ID",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -130,7 +129,9 @@
                 "summary": "Delete a task",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
+                        "example": 1,
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -139,28 +140,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Task deleted successfully",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/dto.DeleteTaskResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid ID",
                         "schema": {
                             "$ref": "#/definitions/common.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Task not found",
                         "schema": {
                             "$ref": "#/definitions/common.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/common.ErrorResponse"
                         }
@@ -170,7 +168,7 @@
         },
         "/tasks/{id}/status": {
             "patch": {
-                "description": "Update the status field of a task",
+                "description": "Update the status field of a task by its ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -183,7 +181,9 @@
                 "summary": "Update task status",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
+                        "example": 1,
                         "description": "Task ID",
                         "name": "id",
                         "in": "path",
@@ -191,29 +191,29 @@
                     },
                     {
                         "description": "Status payload",
-                        "name": "status",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/dto.UpdateStatusRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Status updated successfully",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/dto.UpdateStatusResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/common.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found",
                         "schema": {
                             "$ref": "#/definitions/common.ErrorResponse"
                         }
@@ -231,20 +231,105 @@
                 }
             }
         },
-        "task.Task": {
+        "dto.CreateTaskRequest": {
+            "type": "object",
+            "required": [
+                "task"
+            ],
+            "properties": {
+                "task": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "example": "Buy milk"
+                }
+            }
+        },
+        "dto.DeleteTaskResponse": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
+                "message": {
+                    "type": "string",
+                    "example": "Task deleted successfully"
+                }
+            }
+        },
+        "dto.GetTaskResponse": {
+            "type": "object",
+            "properties": {
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "pending"
                 },
                 "task": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Buy milk"
+                }
+            }
+        },
+        "dto.ListTasksResponse": {
+            "type": "object",
+            "properties": {
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GetTaskResponse"
+                    }
+                }
+            }
+        },
+        "dto.UpdateStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "pending",
+                        "in-progress",
+                        "completed"
+                    ],
+                    "example": "completed"
+                }
+            }
+        },
+        "dto.UpdateStatusResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "status updated"
+                }
+            }
+        },
+        "task.Task": {
+            "type": "object",
+            "required": [
+                "status",
+                "task"
+            ],
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2025-08-27 10:35:16.263"
+                },
+                "id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                },
+                "status": {
+                    "type": "string",
+                    "example": "pending"
+                },
+                "task": {
+                    "type": "string",
+                    "example": "Buy milk"
                 }
             }
         }

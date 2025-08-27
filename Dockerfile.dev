@@ -3,7 +3,7 @@ FROM golang:latest
 
 # Install Air for hot-reloading
 RUN go install github.com/air-verse/air@latest
-
+RUN go install github.com/swaggo/swag/cmd/swag@latest
 # Set working directory
 WORKDIR /app
 

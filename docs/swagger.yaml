@@ -5,16 +5,76 @@ definitions:
       error:
         type: string
     type: object
+  dto.CreateTaskRequest:
+    properties:
+      task:
+        example: Buy milk
+        maxLength: 20
+        type: string
+    required:
+    - task
+    type: object
+  dto.DeleteTaskResponse:
+    properties:
+      message:
+        example: Task deleted successfully
+        type: string
+    type: object
+  dto.GetTaskResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+      status:
+        example: pending
+        type: string
+      task:
+        example: Buy milk
+        type: string
+    type: object
+  dto.ListTasksResponse:
+    properties:
+      tasks:
+        items:
+          $ref: '#/definitions/dto.GetTaskResponse'
+        type: array
+    type: object
+  dto.UpdateStatusRequest:
+    properties:
+      status:
+        enum:
+        - pending
+        - in-progress
+        - completed
+        example: completed
+        type: string
+    required:
+    - status
+    type: object
+  dto.UpdateStatusResponse:
+    properties:
+      message:
+        example: status updated
+        type: string
+    type: object
   task.Task:
     properties:
       created_at:
+        example: "2025-08-27 10:35:16.263"
         type: string
       id:
+        example: 1
+        minimum: 1
         type: integer
       status:
+        example: pending
         type: string
       task:
+        example: Buy milk
         type: string
+    required:
+    - status
+    - task
     type: object
 host: localhost:8080
 info:
@@ -32,13 +92,11 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: List of tasks retrieved successfully
           schema:
-            items:
-              $ref: '#/definitions/task.Task'
-            type: array
+            $ref: '#/definitions/dto.ListTasksResponse'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             $ref: '#/definitions/common.ErrorResponse'
       summary: List all tasks
@@ -54,7 +112,7 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/task.Task'
+          $ref: '#/definitions/dto.CreateTaskRequest'
       produces:
       - application/json
       responses:
@@ -71,12 +129,12 @@ paths:
       - tasks
   /tasks/{id}:
     delete:
-      consumes:
-      - application/json
       description: Delete a task by its ID
       parameters:
       - description: Task ID
+        example: 1
         in: path
+        minimum: 1
         name: id
         required: true
         type: integer
@@ -84,33 +142,31 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Task deleted successfully
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/dto.DeleteTaskResponse'
         "400":
-          description: Bad Request
+          description: Invalid ID
           schema:
             $ref: '#/definitions/common.ErrorResponse'
         "404":
-          description: Not Found
+          description: Task not found
           schema:
             $ref: '#/definitions/common.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             $ref: '#/definitions/common.ErrorResponse'
       summary: Delete a task
       tags:
       - tasks
     get:
-      consumes:
-      - application/json
-      description: Get details of a specific task by ID
+      description: Returns details of a specific task by ID
       parameters:
-      - description: Task ID
+      - description: Task ID (>=1)
+        example: 1
         in: path
+        minimum: 1
         name: id
         required: true
         type: integer
@@ -118,11 +174,15 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Task retrieved successfully
           schema:
-            $ref: '#/definitions/task.Task'
+            $ref: '#/definitions/dto.GetTaskResponse'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
         "404":
-          description: Not Found
+          description: Task not found
           schema:
             $ref: '#/definitions/common.ErrorResponse'
       summary: Get a task by ID
@@ -132,32 +192,34 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Update the status field of a task
+      description: Update the status field of a task by its ID
       parameters:
       - description: Task ID
+        example: 1
         in: path
+        minimum: 1
         name: id
         required: true
         type: integer
       - description: Status payload
         in: body
-        name: status
+        name: request
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/dto.UpdateStatusRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Status updated successfully
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/dto.UpdateStatusResponse'
         "400":
-          description: Bad Request
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "404":
+          description: Task not found
           schema:
             $ref: '#/definitions/common.ErrorResponse'
       summary: Update task status
