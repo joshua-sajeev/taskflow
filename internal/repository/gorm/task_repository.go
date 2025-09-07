@@ -14,7 +14,7 @@ func NewTaskRepository(db *gorm.DB) *TaskRepository {
 }
 
 // Compile-time check
-var _ task.TaskRepository = (*TaskRepository)(nil)
+var _ task.TaskRepositoryInterface = (*TaskRepository)(nil)
 
 func (r *TaskRepository) Create(t *task.Task) error {
 	return r.db.Create(t).Error

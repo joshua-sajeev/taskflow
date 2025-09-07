@@ -6,20 +6,22 @@ import (
 	"strconv"
 
 	"taskflow/internal/common"
+	"taskflow/internal/domain/task"
 	"taskflow/internal/dto"
-	"taskflow/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 type TaskHandler struct {
-	service *service.TaskService
+	service task.TaskServiceInterface
 }
 
-func NewTaskHandler(s *service.TaskService) *TaskHandler {
+func NewTaskHandler(s task.TaskServiceInterface) *TaskHandler {
 	return &TaskHandler{service: s}
 }
+
+var _ task.TaskHandlerInterface = (*TaskHandler)(nil)
 
 // CreateTask godoc
 // @Summary Create a new task

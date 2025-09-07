@@ -1,7 +1,7 @@
 package dto
 
 type CreateTaskRequest struct {
-	Task string `json:"task" binding:"required,string,max=20" example:"Buy milk"`
+	Task string `json:"task" binding:"required,max=20" example:"Buy milk"`
 }
 
 type GetTaskResponse struct {

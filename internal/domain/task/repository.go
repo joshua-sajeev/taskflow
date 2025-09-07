@@ -1,6 +1,6 @@
 package task
 
-type TaskRepository interface {
+type TaskRepositoryInterface interface {
 	Create(task *Task) error
 	GetByID(id int) (*Task, error)
 	List() ([]Task, error)

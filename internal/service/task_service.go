@@ -7,12 +7,14 @@ import (
 )
 
 type TaskService struct {
-	repo task.TaskRepository
+	repo task.TaskRepositoryInterface
 }
 
-func NewTaskService(repo task.TaskRepository) *TaskService {
+func NewTaskService(repo task.TaskRepositoryInterface) *TaskService {
 	return &TaskService{repo: repo}
 }
+
+var _ task.TaskServiceInterface = (*TaskService)(nil)
 
 func (s *TaskService) CreateTask(taskRequest *dto.CreateTaskRequest) error {
 	if taskRequest.Task == "" {
