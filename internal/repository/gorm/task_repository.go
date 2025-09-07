@@ -1,8 +1,9 @@
 package gorm
 
 import (
-	"gorm.io/gorm"
 	"taskflow/internal/domain/task"
+
+	"gorm.io/gorm"
 )
 
 type TaskRepository struct {
