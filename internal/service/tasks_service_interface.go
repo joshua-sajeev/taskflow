@@ -1,4 +1,4 @@
-package task
+package service
 
 import "taskflow/internal/dto"
 

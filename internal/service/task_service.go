@@ -14,7 +14,7 @@ func NewTaskService(repo task.TaskRepositoryInterface) *TaskService {
 	return &TaskService{repo: repo}
 }
 
-var _ task.TaskServiceInterface = (*TaskService)(nil)
+var _ TaskServiceInterface = (*TaskService)(nil)
 
 func (s *TaskService) CreateTask(taskRequest *dto.CreateTaskRequest) error {
 	if taskRequest.Task == "" {
