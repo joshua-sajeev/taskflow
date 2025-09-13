@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"taskflow/internal/common"
-	"taskflow/internal/domain/task"
 	"taskflow/internal/dto"
 	"taskflow/internal/service"
 
@@ -22,7 +21,7 @@ func NewTaskHandler(s service.TaskServiceInterface) *TaskHandler {
 	return &TaskHandler{service: s}
 }
 
-var _ task.TaskHandlerInterface = (*TaskHandler)(nil)
+var _ TaskHandlerInterface = (*TaskHandler)(nil)
 
 // CreateTask godoc
 // @Summary Create a new task
