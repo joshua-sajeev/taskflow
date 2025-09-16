@@ -5,8 +5,9 @@ import (
 	"log"
 	"os"
 	"taskflow/internal/domain/task"
+	"taskflow/internal/domain/user"
 	"taskflow/internal/handler"
-	gg "taskflow/internal/repository/gorm"
+	gg "taskflow/internal/repository/gorm/gorm_task"
 	"taskflow/internal/service"
 	"time"
 
@@ -32,14 +33,14 @@ func getEnv(key, fallback string) string {
 // @host            localhost:8080
 // @BasePath        /api
 func main() {
-	user := getEnv("MYSQL_USER", "appuser")
+	dbuser := getEnv("MYSQL_USER", "appuser")
 	pass := getEnv("MYSQL_PASSWORD", "apppassword")
 	host := getEnv("MYSQL_HOST", "172.18.0.2")
 	port := getEnv("MYSQL_PORT", "3306")
 	dbname := getEnv("MYSQL_DATABASE", "taskdb")
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", user, pass, host, port, dbname)
-	log.Printf("Connecting with user %s to %s:%s/%s", user, host, port, dbname)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", dbuser, pass, host, port, dbname)
+	log.Printf("Connecting with user %s to %s:%s/%s", dbuser, host, port, dbname)
 
 	var db *gorm.DB
 	var err error
@@ -83,6 +84,9 @@ func main() {
 		log.Fatalf("AutoMigrate failed: %v", err)
 	}
 
+	if err := db.AutoMigrate(user.User{}); err != nil {
+		log.Fatalf("AutoMigrate failed: %v", err)
+	}
 	// Dependency wiring
 	repo := gg.NewTaskRepository(db)
 	svc := service.NewTaskService(repo)

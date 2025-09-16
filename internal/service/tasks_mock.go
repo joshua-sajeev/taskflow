@@ -4,13 +4,14 @@ import (
 	"taskflow/internal/domain/task"
 
 	"github.com/stretchr/testify/mock"
+	gg "taskflow/internal/repository/gorm/gorm_task"
 )
 
 type TaskRepoMock struct {
 	mock.Mock
 }
 
-var _ task.TaskRepositoryInterface = (*TaskRepoMock)(nil)
+var _ gg.TaskRepositoryInterface = (*TaskRepoMock)(nil)
 
 func (m *TaskRepoMock) Create(task *task.Task) error {
 	args := m.Called(task)
