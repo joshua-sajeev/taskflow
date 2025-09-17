@@ -1,17 +1,17 @@
-package service
+package task_service
 
 import (
 	"errors"
 	"taskflow/internal/domain/task"
 	"taskflow/internal/dto"
-	gg "taskflow/internal/repository/gorm/gorm_task"
+	"taskflow/internal/repository/gorm/gorm_task"
 )
 
 type TaskService struct {
-	repo gg.TaskRepositoryInterface
+	repo gorm_task.TaskRepositoryInterface
 }
 
-func NewTaskService(repo gg.TaskRepositoryInterface) *TaskService {
+func NewTaskService(repo gorm_task.TaskRepositoryInterface) *TaskService {
 	return &TaskService{repo: repo}
 }
 

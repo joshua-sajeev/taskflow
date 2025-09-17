@@ -2,7 +2,7 @@ package handler
 
 import (
 	"taskflow/internal/dto"
-	"taskflow/internal/service"
+	task_service "taskflow/internal/service/task"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -11,7 +11,7 @@ type TaskServiceMock struct {
 	mock.Mock
 }
 
-var _ service.TaskServiceInterface = (*TaskServiceMock)(nil)
+var _ task_service.TaskServiceInterface = (*TaskServiceMock)(nil)
 
 func (m *TaskServiceMock) CreateTask(taskRequest *dto.CreateTaskRequest) error {
 

@@ -8,8 +8,10 @@ import (
 	"taskflow/internal/domain/user"
 	"taskflow/internal/handler"
 	gg "taskflow/internal/repository/gorm/gorm_task"
-	"taskflow/internal/service"
+	task_service "taskflow/internal/service/task"
 	"time"
+
+	docs "taskflow/docs"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
@@ -17,7 +19,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	docs "taskflow/docs"
 )
 
 func getEnv(key, fallback string) string {
@@ -89,7 +90,7 @@ func main() {
 	}
 	// Dependency wiring
 	repo := gg.NewTaskRepository(db)
-	svc := service.NewTaskService(repo)
+	svc := task_service.NewTaskService(repo)
 	h := handler.NewTaskHandler(svc)
 
 	// Router setup

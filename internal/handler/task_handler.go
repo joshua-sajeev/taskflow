@@ -7,17 +7,17 @@ import (
 
 	"taskflow/internal/common"
 	"taskflow/internal/dto"
-	"taskflow/internal/service"
+	task_service "taskflow/internal/service/task"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 type TaskHandler struct {
-	service service.TaskServiceInterface
+	service task_service.TaskServiceInterface
 }
 
-func NewTaskHandler(s service.TaskServiceInterface) *TaskHandler {
+func NewTaskHandler(s task_service.TaskServiceInterface) *TaskHandler {
 	return &TaskHandler{service: s}
 }
 
