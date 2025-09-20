@@ -6,13 +6,14 @@ import (
 	"strings"
 
 	"taskflow/internal/common"
+	"taskflow/internal/repository/gorm/gorm_user"
 	"taskflow/pkg"
 
 	"github.com/gin-gonic/gin"
 )
 
 // AuthMiddleware protects routes and requires a valid JWT
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(repo gorm_user.UserRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		secretKey := []byte(pkg.GetEnv("JWT_SECRET", "secret-key"))
 

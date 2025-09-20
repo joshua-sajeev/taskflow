@@ -7,12 +7,12 @@ import (
 
 	"taskflow/internal/domain/task"
 	"taskflow/internal/domain/user"
-	"taskflow/internal/handler/task"
-	"taskflow/internal/handler/user"
+	task_handler "taskflow/internal/handler/task"
+	user_handler "taskflow/internal/handler/user"
 	"taskflow/internal/repository/gorm/gorm_task"
 	"taskflow/internal/repository/gorm/gorm_user"
-	"taskflow/internal/service/task"
-	"taskflow/internal/service/user"
+	task_service "taskflow/internal/service/task"
+	user_service "taskflow/internal/service/user"
 	"taskflow/pkg"
 
 	docs "taskflow/docs"
@@ -100,7 +100,7 @@ func main() {
 		api.POST("/auth/login", userHandler.Login)
 
 		taskRoutes := api.Group("/tasks")
-		taskRoutes.Use(user_handler.AuthMiddleware())
+		taskRoutes.Use(user_handler.AuthMiddleware(*userRepo))
 		{
 			taskRoutes.POST("", taskHandler.CreateTask)
 			taskRoutes.GET("/:id", taskHandler.GetTask)
@@ -110,7 +110,7 @@ func main() {
 		}
 
 		userRoutes := api.Group("/users")
-		userRoutes.Use(user_handler.AuthMiddleware())
+		userRoutes.Use(user_handler.AuthMiddleware(*userRepo))
 		{
 			userRoutes.PATCH("/password", userHandler.UpdatePassword)
 			userRoutes.DELETE("/account", userHandler.DeleteUser)

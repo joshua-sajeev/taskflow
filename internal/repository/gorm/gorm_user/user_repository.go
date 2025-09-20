@@ -15,47 +15,54 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-// TODO:
-// var _ UserRepositoryInterface = (*UserRepository)(nil)
+var _ UserRepositoryInterface = (*UserRepository)(nil)
 
 func (r *UserRepository) Create(u *user.User) error {
+	if u == nil {
+		return fmt.Errorf("user cannot be nil")
+	}
 	return r.db.Create(u).Error
 }
 
 func (r *UserRepository) Update(u *user.User) error {
-	if u.ID == 0 {
-		return fmt.Errorf("missing user ID")
+	if u == nil {
+		return fmt.Errorf("user cannot be nil")
 	}
 
-	// Check if user exists
+	if u.ID <= 0 {
+		return fmt.Errorf("invalid user ID")
+	}
+
 	var existing user.User
 	if err := r.db.First(&existing, u.ID).Error; err != nil {
-		return err // will be gorm.ErrRecordNotFound if not found
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("user not found")
+		}
+		return err
 	}
 
-	// Update only provided fields
 	return r.db.Model(&existing).Updates(u).Error
 }
 
 func (r *UserRepository) Delete(id int) error {
-	if r == nil || r.db == nil {
-		return fmt.Errorf("database not initialized")
-	}
-
-	if id == 0 {
-		return fmt.Errorf("missing user ID")
+	if id <= 0 {
+		return fmt.Errorf("invalid user ID")
 	}
 
 	return r.db.Delete(&user.User{}, id).Error
 }
 
 func (r *UserRepository) GetByID(id int) (*user.User, error) {
-	if id == 0 {
-		return nil, fmt.Errorf("missing user ID")
+	if id <= 0 {
+		return nil, fmt.Errorf("invalid user ID")
 	}
 
 	var u user.User
-	if err := r.db.First(&u, id).Error; err != nil {
+	err := r.db.First(&u, id).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -64,13 +71,34 @@ func (r *UserRepository) GetByID(id int) (*user.User, error) {
 
 func (r *UserRepository) GetByEmail(email string) (*user.User, error) {
 	if email == "" {
-		return nil, fmt.Errorf("missing email")
+		return nil, fmt.Errorf("email cannot be empty")
 	}
 
 	var u user.User
-	if err := r.db.Where("email = ?", email).First(&u).Error; err != nil {
+	err := r.db.Where("email = ?", email).First(&u).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 
 	return &u, nil
+}
+
+func (r *UserRepository) Exists(id int) (bool, error) {
+	if id <= 0 {
+		return false, fmt.Errorf("invalid user ID")
+	}
+
+	var u user.User
+	err := r.db.First(&u, id).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
 }

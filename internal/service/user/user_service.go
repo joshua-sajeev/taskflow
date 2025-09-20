@@ -11,7 +11,6 @@ import (
 	"taskflow/pkg"
 
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 type UserService struct {
@@ -61,6 +60,7 @@ func (s *UserService) CreateUser(req *dto.CreateUserRequest) (*dto.CreateUserRes
 }
 
 func (s *UserService) AuthenticateUser(req *dto.AuthRequest) (*dto.AuthResponse, error) {
+	// Validate input
 	if req.Email == "" {
 		return nil, errors.New("email is required")
 	}
@@ -70,24 +70,30 @@ func (s *UserService) AuthenticateUser(req *dto.AuthRequest) (*dto.AuthResponse,
 
 	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 
+	// Fetch user by email
 	u, err := s.repo.GetByEmail(req.Email)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("invalid credentials")
-		}
 		return nil, fmt.Errorf("database error: %w", err)
 	}
 
+	// Check if user exists
+	if u == nil {
+		return nil, errors.New("invalid credentials")
+	}
+
+	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(req.Password)); err != nil {
 		return nil, errors.New("invalid credentials")
 	}
 
+	// Create JWT token
 	secretKey := []byte(pkg.GetEnv("JWT_SECRET", "secret-key"))
 	token, err := pkg.CreateToken(u.ID, u.Email, secretKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create token: %w", err)
 	}
 
+	// Return successful response
 	return &dto.AuthResponse{
 		Token: token,
 		ID:    u.ID,
@@ -108,7 +114,10 @@ func (s *UserService) UpdatePassword(req *dto.UpdatePasswordRequest) (*dto.Updat
 
 	u, err := s.repo.GetByID(req.ID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
+	}
+	if u == nil {
+		return nil, errors.New("user not found")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(req.OldPassword)); err != nil {
