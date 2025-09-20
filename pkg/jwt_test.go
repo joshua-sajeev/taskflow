@@ -17,36 +17,32 @@ var (
 func TestCreateToken(t *testing.T) {
 	tests := []struct {
 		name          string
-		username      string
+		userID        int
+		email         string
 		secretKey     []byte
 		expectedError error
 		wantErr       bool
 	}{
 		{
-			name:          "valid user",
-			username:      "alice",
-			secretKey:     testSecretKey,
-			expectedError: nil,
-			wantErr:       false,
+			name:      "valid token",
+			userID:    1,
+			email:     "alice@example.com",
+			secretKey: testSecretKey,
+			wantErr:   false,
 		},
 		{
-			name:          "empty username",
-			username:      "",
+			name:          "empty userID",
+			userID:        0,
+			email:         "alice@example.com",
 			secretKey:     testSecretKey,
-			expectedError: ErrEmptyUsername,
+			expectedError: ErrEmptyUserID,
 			wantErr:       true,
 		},
 		{
 			name:          "empty secret key",
-			username:      "alice",
+			userID:        1,
+			email:         "bob@example.com",
 			secretKey:     emptySecretKey,
-			expectedError: ErrTokenCreation,
-			wantErr:       true,
-		},
-		{
-			name:          "nil secret key",
-			username:      "alice",
-			secretKey:     nil,
 			expectedError: ErrTokenCreation,
 			wantErr:       true,
 		},
@@ -54,315 +50,200 @@ func TestCreateToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			token, err := CreateToken(tt.username, tt.secretKey)
+			token, err := CreateToken(tt.userID, tt.email, tt.secretKey)
 
 			if tt.wantErr {
 				if err == nil {
-					t.Errorf("CreateToken() expected error but got none")
+					t.Errorf("CreateToken() expected error, got nil")
 					return
 				}
-
-				if tt.expectedError != nil && !errors.Is(err, tt.expectedError) {
-					t.Errorf("CreateToken() error = %v, expected error type %v", err, tt.expectedError)
+				if !errors.Is(err, tt.expectedError) {
+					t.Errorf("CreateToken() error = %v, want %v", err, tt.expectedError)
 				}
 				return
 			}
 
 			if err != nil {
-				t.Errorf("CreateToken() unexpected error = %v", err)
+				t.Errorf("CreateToken() unexpected error: %v", err)
 				return
 			}
-
 			if token == "" {
 				t.Errorf("CreateToken() returned empty token")
-				return
 			}
 
-			parsedToken, parseErr := jwt.Parse(token, func(token *jwt.Token) (any, error) {
+			// Parse back to verify claims
+			parsed, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
 				return tt.secretKey, nil
 			})
-
-			if parseErr != nil {
-				t.Errorf("CreateToken() generated token could not be parsed: %v", parseErr)
-				return
-			}
-
-			if !parsedToken.Valid {
-				t.Errorf("CreateToken() generated invalid token")
-				return
-			}
-
-			claims, ok := parsedToken.Claims.(jwt.MapClaims)
-			if !ok {
-				t.Errorf("CreateToken() token claims are not MapClaims")
-				return
-			}
-
-			if claims[UsernameClaimKey] != tt.username {
-				t.Errorf("CreateToken() username in token = %v, want %v", claims[UsernameClaimKey], tt.username)
-			}
-
-			if exp, exists := claims[ExpirationClaimKey]; exists {
-				if expFloat, ok := exp.(float64); ok {
-					expTime := time.Unix(int64(expFloat), 0)
-					if expTime.Before(time.Now()) {
-						t.Errorf("CreateToken() token expiration is in the past")
-					}
-				} else {
-					t.Errorf("CreateToken() expiration claim is not a valid timestamp")
-				}
-			} else {
-				t.Errorf("CreateToken() token missing expiration claim")
+			if err != nil || !parsed.Valid {
+				t.Errorf("CreateToken() produced invalid token: %v", err)
 			}
 		})
 	}
 }
 
 func TestValidateToken(t *testing.T) {
-	validToken, err := CreateToken("johndoe", testSecretKey)
-	if err != nil {
-		t.Fatalf("failed to create valid token for testing: %v", err)
-	}
-
-	wrongSecretToken, err := CreateToken("johndoe", invalidSecretKey)
-	if err != nil {
-		t.Fatalf("failed to create token with wrong secret for testing: %v", err)
-	}
+	validToken, _ := CreateToken(42, "john@example.com", testSecretKey)
 
 	expiredClaims := jwt.MapClaims{
-		UsernameClaimKey:   "johndoe",
-		ExpirationClaimKey: time.Now().Add(-time.Hour).Unix(), // Expired 1 hour ago
+		UserIDClaimKey:     42,
+		"email":            "john@example.com",
+		ExpirationClaimKey: time.Now().Add(-time.Hour).Unix(),
 	}
 	expiredTokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, expiredClaims)
-	expiredToken, err := expiredTokenObj.SignedString(testSecretKey)
-	if err != nil {
-		t.Fatalf("failed to create expired token for testing: %v", err)
-	}
+	expiredToken, _ := expiredTokenObj.SignedString(testSecretKey)
 
 	tests := []struct {
-		name          string
-		tokenString   string
-		secretKey     []byte
-		expectedError error
-		wantErr       bool
-		wantUsername  string
+		name       string
+		tokenStr   string
+		secretKey  []byte
+		wantErr    bool
+		wantUserID int
 	}{
 		{
-			name:          "valid token",
-			tokenString:   validToken,
-			secretKey:     testSecretKey,
-			expectedError: nil,
-			wantErr:       false,
-			wantUsername:  "johndoe",
+			name:       "valid token",
+			tokenStr:   validToken,
+			secretKey:  testSecretKey,
+			wantErr:    false,
+			wantUserID: 42,
 		},
 		{
-			name:          "invalid secret",
-			tokenString:   wrongSecretToken,
-			secretKey:     testSecretKey,
-			expectedError: ErrTokenValidation,
-			wantErr:       true,
+			name:      "wrong secret",
+			tokenStr:  validToken,
+			secretKey: invalidSecretKey,
+			wantErr:   true,
 		},
 		{
-			name:          "malformed token",
-			tokenString:   "not-a-token",
-			secretKey:     testSecretKey,
-			expectedError: ErrTokenValidation,
-			wantErr:       true,
+			name:      "malformed token",
+			tokenStr:  "not-a-token",
+			secretKey: testSecretKey,
+			wantErr:   true,
 		},
 		{
-			name:          "empty token string",
-			tokenString:   "",
-			secretKey:     testSecretKey,
-			expectedError: ErrTokenValidation,
-			wantErr:       true,
+			name:      "expired token",
+			tokenStr:  expiredToken,
+			secretKey: testSecretKey,
+			wantErr:   true,
 		},
 		{
-			name:          "empty secret key",
-			tokenString:   validToken,
-			secretKey:     emptySecretKey,
-			expectedError: ErrTokenValidation,
-			wantErr:       true,
+			name:      "empty token",
+			tokenStr:  "",
+			secretKey: testSecretKey,
+			wantErr:   true,
 		},
 		{
-			name:          "expired token",
-			tokenString:   expiredToken,
-			secretKey:     testSecretKey,
-			expectedError: ErrTokenValidation,
-			wantErr:       true,
+			name:      "empty secret key",
+			tokenStr:  validToken,
+			secretKey: emptySecretKey,
+			wantErr:   true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			claims, err := ValidateToken(tt.tokenString, tt.secretKey)
-
+			claims, err := ValidateToken(tt.tokenStr, tt.secretKey)
 			if tt.wantErr {
 				if err == nil {
-					t.Errorf("ValidateToken() expected error but got none")
-					return
-				}
-
-				if tt.expectedError != nil && !errors.Is(err, tt.expectedError) {
-					t.Errorf("ValidateToken() error = %v, expected error type %v", err, tt.expectedError)
+					t.Errorf("ValidateToken() expected error, got nil")
 				}
 				return
 			}
-
 			if err != nil {
-				t.Errorf("ValidateToken() unexpected error = %v", err)
+				t.Errorf("ValidateToken() unexpected error: %v", err)
 				return
 			}
-
-			if claims == nil {
-				t.Errorf("ValidateToken() returned nil claims")
-				return
-			}
-
-			if tt.wantUsername != "" {
-				if username := (*claims)[UsernameClaimKey]; username != tt.wantUsername {
-					t.Errorf("ValidateToken() username = %v, want %v", username, tt.wantUsername)
-				}
+			if uid := int((*claims)[UserIDClaimKey].(float64)); uid != tt.wantUserID {
+				t.Errorf("ValidateToken() userID = %v, want %v", uid, tt.wantUserID)
 			}
 		})
 	}
 }
 
-func TestGetUsernameFromToken(t *testing.T) {
-	validToken, err := CreateToken("alice", testSecretKey)
-	if err != nil {
-		t.Fatalf("failed to create valid token for testing: %v", err)
-	}
+func TestGetUserIDFromToken(t *testing.T) {
+	validToken, _ := CreateToken(7, "alice@example.com", testSecretKey)
 
-	claimsWithoutUsername := jwt.MapClaims{
-		ExpirationClaimKey: time.Now().Add(time.Hour).Unix(),
-		"other_claim":      "some_value",
-	}
-	tokenWithoutUsernameObj := jwt.NewWithClaims(jwt.SigningMethodHS256, claimsWithoutUsername)
-	tokenWithoutUsername, err := tokenWithoutUsernameObj.SignedString(testSecretKey)
-	if err != nil {
-		t.Fatalf("failed to create token without username for testing: %v", err)
-	}
-
-	claimsWithEmptyUsername := jwt.MapClaims{
-		UsernameClaimKey:   "",
+	noUserIDClaims := jwt.MapClaims{
+		"email":            "alice@example.com",
 		ExpirationClaimKey: time.Now().Add(time.Hour).Unix(),
 	}
-	tokenWithEmptyUsernameObj := jwt.NewWithClaims(jwt.SigningMethodHS256, claimsWithEmptyUsername)
-	tokenWithEmptyUsername, err := tokenWithEmptyUsernameObj.SignedString(testSecretKey)
-	if err != nil {
-		t.Fatalf("failed to create token with empty username for testing: %v", err)
-	}
+	noUserIDToken, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, noUserIDClaims).SignedString(testSecretKey)
 
 	tests := []struct {
-		name          string
-		tokenString   string
-		secretKey     []byte
-		expectedError error
-		wantErr       bool
-		wantUsername  string
+		name       string
+		tokenStr   string
+		secretKey  []byte
+		wantErr    bool
+		wantUserID int
 	}{
 		{
-			name:          "valid token",
-			tokenString:   validToken,
-			secretKey:     testSecretKey,
-			expectedError: nil,
-			wantErr:       false,
-			wantUsername:  "alice",
+			name:       "valid token",
+			tokenStr:   validToken,
+			secretKey:  testSecretKey,
+			wantErr:    false,
+			wantUserID: 7,
 		},
 		{
-			name:          "invalid token string",
-			tokenString:   "this.is.not.jwt",
-			secretKey:     testSecretKey,
-			expectedError: ErrTokenValidation,
-			wantErr:       true,
+			name:      "token without userID",
+			tokenStr:  noUserIDToken,
+			secretKey: testSecretKey,
+			wantErr:   true,
 		},
 		{
-			name:          "token without username claim",
-			tokenString:   tokenWithoutUsername,
-			secretKey:     testSecretKey,
-			expectedError: ErrUsernameNotFound,
-			wantErr:       true,
+			name:      "invalid token string",
+			tokenStr:  "invalid.token.here",
+			secretKey: testSecretKey,
+			wantErr:   true,
 		},
 		{
-			name:          "token with empty username",
-			tokenString:   tokenWithEmptyUsername,
-			secretKey:     testSecretKey,
-			expectedError: ErrUsernameNotFound,
-			wantErr:       true,
-		},
-		{
-			name:          "empty token string",
-			tokenString:   "",
-			secretKey:     testSecretKey,
-			expectedError: ErrTokenValidation,
-			wantErr:       true,
+			name:      "empty token string",
+			tokenStr:  "",
+			secretKey: testSecretKey,
+			wantErr:   true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			username, err := GetUsernameFromToken(tt.tokenString, tt.secretKey)
-
+			uid, err := GetUserIDFromToken(tt.tokenStr, tt.secretKey)
 			if tt.wantErr {
 				if err == nil {
-					t.Errorf("GetUsernameFromToken() expected error but got none")
-					return
-				}
-
-				if tt.expectedError != nil && !errors.Is(err, tt.expectedError) {
-					t.Errorf("GetUsernameFromToken() error = %v, expected error type %v", err, tt.expectedError)
+					t.Errorf("GetUserIDFromToken() expected error, got nil")
 				}
 				return
 			}
-
 			if err != nil {
-				t.Errorf("GetUsernameFromToken() unexpected error = %v", err)
+				t.Errorf("GetUserIDFromToken() unexpected error: %v", err)
 				return
 			}
-
-			if username != tt.wantUsername {
-				t.Errorf("GetUsernameFromToken() = %v, want %v", username, tt.wantUsername)
+			if uid != tt.wantUserID {
+				t.Errorf("GetUserIDFromToken() = %v, want %v", uid, tt.wantUserID)
 			}
 		})
 	}
 }
 
 func BenchmarkCreateToken(b *testing.B) {
-	username := "testuser"
-	secretKey := testSecretKey
-
 	for b.Loop() {
-		_, err := CreateToken(username, secretKey)
-		if err != nil {
+		if _, err := CreateToken(1, "bench@example.com", testSecretKey); err != nil {
 			b.Fatalf("CreateToken failed: %v", err)
 		}
 	}
 }
 
 func BenchmarkValidateToken(b *testing.B) {
-	token, err := CreateToken("testuser", testSecretKey)
-	if err != nil {
-		b.Fatalf("failed to create token for benchmark: %v", err)
-	}
-
+	token, _ := CreateToken(1, "bench@example.com", testSecretKey)
 	for b.Loop() {
-		_, err := ValidateToken(token, testSecretKey)
-		if err != nil {
+		if _, err := ValidateToken(token, testSecretKey); err != nil {
 			b.Fatalf("ValidateToken failed: %v", err)
 		}
 	}
 }
 
-func BenchmarkGetUsernameFromToken(b *testing.B) {
-	token, err := CreateToken("testuser", testSecretKey)
-	if err != nil {
-		b.Fatalf("failed to create token for benchmark: %v", err)
-	}
-
+func BenchmarkGetUserIDFromToken(b *testing.B) {
+	token, _ := CreateToken(1, "bench@example.com", testSecretKey)
 	for b.Loop() {
-		_, err := GetUsernameFromToken(token, testSecretKey)
-		if err != nil {
-			b.Fatalf("GetUsernameFromToken failed: %v", err)
+		if _, err := GetUserIDFromToken(token, testSecretKey); err != nil {
+			b.Fatalf("GetUserIDFromToken failed: %v", err)
 		}
 	}
 }

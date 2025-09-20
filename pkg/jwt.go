@@ -9,24 +9,23 @@ import (
 )
 
 var (
-	ErrEmptyUsername     = errors.New("username cannot be empty")
+	ErrEmptyUserID       = errors.New("user ID cannot be empty")
 	ErrTokenCreation     = errors.New("failed to create token")
 	ErrTokenValidation   = errors.New("token validation failed")
 	ErrInvalidClaims     = errors.New("invalid token claims")
-	ErrUsernameNotFound  = errors.New("username claim not found or invalid")
+	ErrUserIDNotFound    = errors.New("user ID claim not found or invalid")
 	ErrUnexpectedSigning = errors.New("unexpected signing method")
 )
 
 const (
 	TokenExpiration    = 24 * time.Hour
-	UsernameClaimKey   = "username"
+	UserIDClaimKey     = "user_id"
 	ExpirationClaimKey = "exp"
 )
 
-// CreateToken generates a JWT token for the given username
-func CreateToken(username string, secretKey []byte) (string, error) {
-	if username == "" {
-		return "", ErrEmptyUsername
+func CreateToken(userID int, email string, secretKey []byte) (string, error) {
+	if userID == 0 {
+		return "", ErrEmptyUserID
 	}
 
 	if len(secretKey) == 0 {
@@ -34,7 +33,9 @@ func CreateToken(username string, secretKey []byte) (string, error) {
 	}
 
 	claims := jwt.MapClaims{
-		UsernameClaimKey:   username,
+		UserIDClaimKey:     userID,
+		"email":            email,
+		"iat":              time.Now().Unix(),
 		ExpirationClaimKey: time.Now().Add(TokenExpiration).Unix(),
 	}
 
@@ -48,7 +49,6 @@ func CreateToken(username string, secretKey []byte) (string, error) {
 	return tokenString, nil
 }
 
-// ValidateToken parses and validates a JWT token string
 func ValidateToken(tokenString string, secretKey []byte) (*jwt.MapClaims, error) {
 	if tokenString == "" {
 		return nil, fmt.Errorf("%w: token string cannot be empty", ErrTokenValidation)
@@ -81,21 +81,16 @@ func ValidateToken(tokenString string, secretKey []byte) (*jwt.MapClaims, error)
 	return &claims, nil
 }
 
-// GetUsernameFromToken extracts the username from a JWT token
-func GetUsernameFromToken(tokenString string, secretKey []byte) (string, error) {
+func GetUserIDFromToken(tokenString string, secretKey []byte) (int, error) {
 	claims, err := ValidateToken(tokenString, secretKey)
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
-	username, ok := (*claims)[UsernameClaimKey].(string)
+	userID, ok := (*claims)[UserIDClaimKey].(float64)
 	if !ok {
-		return "", ErrUsernameNotFound
+		return 0, ErrUserIDNotFound
 	}
 
-	if username == "" {
-		return "", fmt.Errorf("%w: username is empty", ErrUsernameNotFound)
-	}
-
-	return username, nil
+	return int(userID), nil
 }

@@ -206,3 +206,110 @@ func TestUserRepository_Delete(t *testing.T) {
 		})
 	}
 }
+
+func TestUserRepository_GetByID(t *testing.T) {
+	tests := []struct {
+		name     string
+		setup    func(db *gorm.DB) user.User
+		id       int
+		wantErr  bool
+		wantUser *user.User
+	}{
+		{
+			name: "success - existing user",
+			setup: func(db *gorm.DB) user.User {
+				u := user.User{Email: "idtest@example.com", Password: "pass"}
+				require.NoError(t, db.Create(&u).Error)
+				return u
+			},
+			wantErr:  false,
+			wantUser: &user.User{Email: "idtest@example.com", Password: "pass"},
+		},
+		{
+			name:    "error - non-existent user",
+			setup:   func(db *gorm.DB) user.User { return user.User{} },
+			id:      9999,
+			wantErr: true,
+		},
+		{
+			name:    "error - missing ID",
+			setup:   func(db *gorm.DB) user.User { return user.User{} },
+			id:      0,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupTestDB(t)
+			r := NewUserRepository(db)
+
+			var id int
+			if tt.id != 0 {
+				id = tt.id
+			} else {
+				u := tt.setup(db)
+				id = u.ID
+			}
+
+			got, err := r.GetByID(id)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.wantUser.Email, got.Email)
+			}
+		})
+	}
+}
+
+func TestUserRepository_GetByEmail(t *testing.T) {
+	tests := []struct {
+		name     string
+		setup    func(db *gorm.DB) user.User
+		email    string
+		wantErr  bool
+		wantUser *user.User
+	}{
+		{
+			name: "success - existing user",
+			setup: func(db *gorm.DB) user.User {
+				u := user.User{Email: "emailtest@example.com", Password: "pass"}
+				require.NoError(t, db.Create(&u).Error)
+				return u
+			},
+			email:    "emailtest@example.com",
+			wantErr:  false,
+			wantUser: &user.User{Email: "emailtest@example.com", Password: "pass"},
+		},
+		{
+			name:    "error - non-existent email",
+			email:   "ghost@example.com",
+			wantErr: true,
+		},
+		{
+			name:    "error - missing email",
+			email:   "",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupTestDB(t)
+			r := NewUserRepository(db)
+
+			if tt.setup != nil {
+				tt.setup(db)
+			}
+
+			got, err := r.GetByEmail(tt.email)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.wantUser.Email, got.Email)
+			}
+		})
+	}
+}

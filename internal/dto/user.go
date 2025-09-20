@@ -17,6 +17,8 @@ type AuthRequest struct {
 
 type AuthResponse struct {
 	Token string `json:"token"`
+	ID    int    `json:"id"`
+	Email string `json:"email"`
 }
 
 type DeleteUserRequest struct {

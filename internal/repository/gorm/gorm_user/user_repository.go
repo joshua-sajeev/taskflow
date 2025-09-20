@@ -48,3 +48,29 @@ func (r *UserRepository) Delete(id int) error {
 
 	return r.db.Delete(&user.User{}, id).Error
 }
+
+func (r *UserRepository) GetByID(id int) (*user.User, error) {
+	if id == 0 {
+		return nil, fmt.Errorf("missing user ID")
+	}
+
+	var u user.User
+	if err := r.db.First(&u, id).Error; err != nil {
+		return nil, err
+	}
+
+	return &u, nil
+}
+
+func (r *UserRepository) GetByEmail(email string) (*user.User, error) {
+	if email == "" {
+		return nil, fmt.Errorf("missing email")
+	}
+
+	var u user.User
+	if err := r.db.Where("email = ?", email).First(&u).Error; err != nil {
+		return nil, err
+	}
+
+	return &u, nil
+}
