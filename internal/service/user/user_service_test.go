@@ -66,6 +66,7 @@ func TestAuthenticateUser(t *testing.T) {
 		req       *dto.AuthRequest
 		mockSetup func(m *MockUserRepository)
 		wantErr   bool
+		errMsg    string
 	}{
 		{
 			name: "success",
@@ -78,12 +79,36 @@ func TestAuthenticateUser(t *testing.T) {
 		},
 		{
 			name: "invalid password",
-			req:  &dto.AuthRequest{Email: "user2@example.com", Password: "wrongpass"},
+			req:  &dto.AuthRequest{Email: "user@example.com", Password: "wrongpass"},
 			mockSetup: func(m *MockUserRepository) {
-				u := &user.User{ID: 2, Email: "user2@example.com", Password: hashedPass}
-				m.On("GetByEmail", "user2@example.com").Return(u, nil).Once()
+				u := &user.User{ID: 1, Email: "user@example.com", Password: hashedPass}
+				m.On("GetByEmail", "user@example.com").Return(u, nil).Once()
 			},
 			wantErr: true,
+			errMsg:  "invalid credentials",
+		},
+		{
+			name: "non-existent user",
+			req:  &dto.AuthRequest{Email: "ghost@example.com", Password: "pass"},
+			mockSetup: func(m *MockUserRepository) {
+				m.On("GetByEmail", "ghost@example.com").Return((*user.User)(nil), nil).Once()
+			},
+			wantErr: true,
+			errMsg:  "invalid credentials",
+		},
+		{
+			name:      "missing email",
+			req:       &dto.AuthRequest{Email: "", Password: "pass"},
+			mockSetup: nil,
+			wantErr:   true,
+			errMsg:    "email is required",
+		},
+		{
+			name:      "missing password",
+			req:       &dto.AuthRequest{Email: "user@example.com", Password: ""},
+			mockSetup: nil,
+			wantErr:   true,
+			errMsg:    "password is required",
 		},
 	}
 
@@ -100,11 +125,16 @@ func TestAuthenticateUser(t *testing.T) {
 			if tt.wantErr {
 				require.Error(t, err)
 				require.Nil(t, resp)
+				if tt.errMsg != "" {
+					require.Contains(t, err.Error(), tt.errMsg)
+				}
 			} else {
 				require.NoError(t, err)
+				require.NotNil(t, resp)
 				require.Equal(t, tt.req.Email, resp.Email)
 				require.NotEmpty(t, resp.Token)
 			}
+
 			mockRepo.AssertExpectations(t)
 		})
 	}
@@ -118,6 +148,7 @@ func TestUpdatePassword(t *testing.T) {
 		req       *dto.UpdatePasswordRequest
 		mockSetup func(m *MockUserRepository)
 		wantErr   bool
+		errMsg    string
 	}{
 		{
 			name: "success",
@@ -145,6 +176,51 @@ func TestUpdatePassword(t *testing.T) {
 				m.On("GetByID", 2).Return(u, nil).Once()
 			},
 			wantErr: true,
+			errMsg:  "invalid old password",
+		},
+		{
+			name: "non-existent user",
+			req: &dto.UpdatePasswordRequest{
+				ID:          999,
+				OldPassword: "any",
+				NewPassword: "newpass123",
+			},
+			mockSetup: func(m *MockUserRepository) {
+				// return typed nil to avoid panic
+				m.On("GetByID", 999).Return((*user.User)(nil), nil).Once()
+			},
+			wantErr: true,
+			errMsg:  "user not found",
+		},
+		{
+			name: "missing old password",
+			req: &dto.UpdatePasswordRequest{
+				ID:          1,
+				OldPassword: "",
+				NewPassword: "newpass123",
+			},
+			wantErr: true,
+			errMsg:  "old password is required",
+		},
+		{
+			name: "missing new password",
+			req: &dto.UpdatePasswordRequest{
+				ID:          1,
+				OldPassword: "oldpass",
+				NewPassword: "",
+			},
+			wantErr: true,
+			errMsg:  "new password is required",
+		},
+		{
+			name: "new password too short",
+			req: &dto.UpdatePasswordRequest{
+				ID:          1,
+				OldPassword: "oldpass",
+				NewPassword: "123",
+			},
+			wantErr: true,
+			errMsg:  "new password must be at least 6 characters",
 		},
 	}
 
@@ -160,11 +236,15 @@ func TestUpdatePassword(t *testing.T) {
 			resp, err := svc.UpdatePassword(tt.req)
 			if tt.wantErr {
 				require.Error(t, err)
+				if tt.errMsg != "" {
+					require.Contains(t, err.Error(), tt.errMsg)
+				}
 				require.Nil(t, resp)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, "Password updated successfully", resp.Message)
 			}
+
 			mockRepo.AssertExpectations(t)
 		})
 	}

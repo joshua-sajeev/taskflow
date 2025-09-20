@@ -226,16 +226,18 @@ func TestUserRepository_GetByID(t *testing.T) {
 			wantUser: &user.User{Email: "idtest@example.com", Password: "pass"},
 		},
 		{
-			name:    "error - non-existent user",
-			setup:   func(db *gorm.DB) user.User { return user.User{} },
-			id:      9999,
-			wantErr: true,
+			name:     "non-existent user",
+			setup:    nil,
+			id:       9999,
+			wantErr:  false, // no error for not found
+			wantUser: nil,
 		},
 		{
-			name:    "error - missing ID",
-			setup:   func(db *gorm.DB) user.User { return user.User{} },
-			id:      0,
-			wantErr: true,
+			name:     "missing ID",
+			setup:    nil,
+			id:       0,
+			wantErr:  true, // invalid ID
+			wantUser: nil,
 		},
 	}
 
@@ -245,19 +247,27 @@ func TestUserRepository_GetByID(t *testing.T) {
 			r := NewUserRepository(db)
 
 			var id int
-			if tt.id != 0 {
-				id = tt.id
-			} else {
+			if tt.setup != nil {
 				u := tt.setup(db)
 				id = u.ID
+				tt.wantUser.ID = u.ID // set expected ID dynamically
+			} else {
+				id = tt.id
 			}
 
 			got, err := r.GetByID(id)
 			if tt.wantErr {
 				require.Error(t, err)
+				require.Nil(t, got)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tt.wantUser.Email, got.Email)
+				if tt.wantUser == nil {
+					require.Nil(t, got)
+				} else {
+					require.Equal(t, tt.wantUser.ID, got.ID)
+					require.Equal(t, tt.wantUser.Email, got.Email)
+					require.Equal(t, tt.wantUser.Password, got.Password)
+				}
 			}
 		})
 	}
@@ -272,25 +282,28 @@ func TestUserRepository_GetByEmail(t *testing.T) {
 		wantUser *user.User
 	}{
 		{
-			name: "success - existing user",
+			name: "success - existing email",
 			setup: func(db *gorm.DB) user.User {
 				u := user.User{Email: "emailtest@example.com", Password: "pass"}
 				require.NoError(t, db.Create(&u).Error)
 				return u
 			},
-			email:    "emailtest@example.com",
 			wantErr:  false,
 			wantUser: &user.User{Email: "emailtest@example.com", Password: "pass"},
 		},
 		{
-			name:    "error - non-existent email",
-			email:   "ghost@example.com",
-			wantErr: true,
+			name:     "non-existent email",
+			setup:    nil,
+			email:    "ghost@example.com",
+			wantErr:  false, // no error for not found
+			wantUser: nil,
 		},
 		{
-			name:    "error - missing email",
-			email:   "",
-			wantErr: true,
+			name:     "missing email",
+			setup:    nil,
+			email:    "",
+			wantErr:  true, // empty email is invalid
+			wantUser: nil,
 		},
 	}
 
@@ -300,15 +313,87 @@ func TestUserRepository_GetByEmail(t *testing.T) {
 			r := NewUserRepository(db)
 
 			if tt.setup != nil {
-				tt.setup(db)
+				u := tt.setup(db)
+				tt.email = u.Email
+				tt.wantUser.ID = u.ID // set expected ID dynamically
 			}
 
 			got, err := r.GetByEmail(tt.email)
 			if tt.wantErr {
 				require.Error(t, err)
+				require.Nil(t, got)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tt.wantUser.Email, got.Email)
+				if tt.wantUser == nil {
+					require.Nil(t, got)
+				} else {
+					require.Equal(t, tt.wantUser.ID, got.ID)
+					require.Equal(t, tt.wantUser.Email, got.Email)
+					require.Equal(t, tt.wantUser.Password, got.Password)
+				}
+			}
+		})
+	}
+}
+
+func TestUserRepository_Exists(t *testing.T) {
+	tests := []struct {
+		name    string
+		setup   func(db *gorm.DB) user.User
+		id      int
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "success - existing user",
+			setup: func(db *gorm.DB) user.User {
+				u := user.User{Email: "exists@example.com", Password: "pass"}
+				require.NoError(t, db.Create(&u).Error)
+				return u
+			},
+			id:      1, // we'll override in the test run after setup
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name:    "non-existent user",
+			id:      9999,
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name:    "invalid user ID",
+			id:      0,
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name:    "negative user ID",
+			id:      -5,
+			want:    false,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupTestDB(t)
+			r := NewUserRepository(db)
+
+			var userID int
+			if tt.setup != nil {
+				u := tt.setup(db)
+				userID = u.ID
+			} else {
+				userID = tt.id
+			}
+
+			got, err := r.Exists(userID)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
 			}
 		})
 	}
