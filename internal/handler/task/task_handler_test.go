@@ -9,6 +9,7 @@ import (
 	"taskflow/internal/auth"
 	"taskflow/internal/common"
 	"taskflow/internal/dto"
+	task_service "taskflow/internal/service/task"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +26,7 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 	tests := []struct {
 		name           string
 		requestBody    any
-		setupMock      func() *TaskServiceMock
+		setupMock      func() *task_service.TaskServiceMock
 		expectedStatus int
 		expectedBody   any
 	}{
@@ -34,8 +35,8 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 			requestBody: dto.CreateTaskRequest{
 				Task: "Buy Milk",
 			},
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("CreateTask", mock.MatchedBy(func(req *dto.CreateTaskRequest) bool {
 					return req.Task == "Buy Milk"
 				})).Return(nil)
@@ -49,8 +50,8 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 		{
 			name:        "failure case - invalid JSON",
 			requestBody: `{"task": }`, // malformed JSON
-			setupMock: func() *TaskServiceMock {
-				return new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: common.ErrorResponse{
@@ -62,8 +63,8 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 			requestBody: dto.CreateTaskRequest{
 				Task: "", // empty task
 			},
-			setupMock: func() *TaskServiceMock {
-				return new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: common.ErrorResponse{
@@ -75,8 +76,8 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 			requestBody: dto.CreateTaskRequest{
 				Task: "Buy Milk",
 			},
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("CreateTask", mock.Anything).Return(errors.New("service error"))
 				return mockService
 			},
@@ -142,15 +143,15 @@ func TestTaskHandler_GetTask(t *testing.T) {
 	tests := []struct {
 		name           string
 		taskID         string
-		setupMock      func() *TaskServiceMock
+		setupMock      func() *task_service.TaskServiceMock
 		expectedStatus int
 		expectedBody   any
 	}{
 		{
 			name:   "success case",
 			taskID: "1",
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("GetTask", 1).Return(dto.GetTaskResponse{
 					ID:     1,
 					Task:   "Buy Milk",
@@ -168,8 +169,8 @@ func TestTaskHandler_GetTask(t *testing.T) {
 		{
 			name:   "failure case - invalid ID",
 			taskID: "invalid",
-			setupMock: func() *TaskServiceMock {
-				return new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: common.ErrorResponse{
@@ -179,8 +180,8 @@ func TestTaskHandler_GetTask(t *testing.T) {
 		{
 			name:   "failure case - ID less than 1",
 			taskID: "0",
-			setupMock: func() *TaskServiceMock {
-				return new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: common.ErrorResponse{
@@ -190,8 +191,8 @@ func TestTaskHandler_GetTask(t *testing.T) {
 		{
 			name:   "failure case - task not found",
 			taskID: "999",
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("GetTask", 999).Return(dto.GetTaskResponse{}, errors.New("not found"))
 				return mockService
 			},
@@ -238,14 +239,14 @@ func TestTaskHandler_GetTask(t *testing.T) {
 func TestTaskHandler_ListTasks(t *testing.T) {
 	tests := []struct {
 		name           string
-		setupMock      func() *TaskServiceMock
+		setupMock      func() *task_service.TaskServiceMock
 		expectedStatus int
 		expectedBody   any
 	}{
 		{
 			name: "success case - with tasks",
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("ListTasks").Return(dto.ListTasksResponse{
 					Tasks: []dto.GetTaskResponse{
 						{ID: 1, Task: "Buy Milk", Status: "pending"},
@@ -264,8 +265,8 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 		},
 		{
 			name: "success case - empty list",
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("ListTasks").Return(dto.ListTasksResponse{
 					Tasks: []dto.GetTaskResponse{},
 				}, nil)
@@ -278,8 +279,8 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 		},
 		{
 			name: "failure case - service error",
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("ListTasks").Return(dto.ListTasksResponse{}, errors.New("database error"))
 				return mockService
 			},
@@ -328,7 +329,7 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 		name           string
 		taskID         string
 		requestBody    any
-		setupMock      func() *TaskServiceMock
+		setupMock      func() *task_service.TaskServiceMock
 		expectedStatus int
 		expectedBody   any
 	}{
@@ -338,8 +339,8 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
 			},
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("UpdateStatus", 1, "completed").Return(nil)
 				return mockService
 			},
@@ -354,8 +355,8 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
 			},
-			setupMock: func() *TaskServiceMock {
-				return new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: common.ErrorResponse{
@@ -368,8 +369,8 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
 			},
-			setupMock: func() *TaskServiceMock {
-				return new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: common.ErrorResponse{
@@ -380,8 +381,8 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 			name:        "failure case - invalid JSON",
 			taskID:      "1",
 			requestBody: `{"status": }`, // malformed JSON
-			setupMock: func() *TaskServiceMock {
-				return new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: common.ErrorResponse{
@@ -394,8 +395,8 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 			requestBody: dto.UpdateStatusRequest{
 				Status: "invalid-status",
 			},
-			setupMock: func() *TaskServiceMock {
-				return new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -405,8 +406,8 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
 			},
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("UpdateStatus", 999, "completed").Return(gorm.ErrRecordNotFound)
 				return mockService
 			},
@@ -421,8 +422,8 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
 			},
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("UpdateStatus", 1, "completed").Return(errors.New("service error"))
 				return mockService
 			},
@@ -491,15 +492,15 @@ func TestTaskHandler_Delete(t *testing.T) {
 	tests := []struct {
 		name           string
 		taskID         string
-		setupMock      func() *TaskServiceMock
+		setupMock      func() *task_service.TaskServiceMock
 		expectedStatus int
 		expectedBody   any
 	}{
 		{
 			name:   "success case",
 			taskID: "1",
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("Delete", 1).Return(nil)
 				return mockService
 			},
@@ -511,8 +512,8 @@ func TestTaskHandler_Delete(t *testing.T) {
 		{
 			name:   "failure case - invalid ID",
 			taskID: "invalid",
-			setupMock: func() *TaskServiceMock {
-				return new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: common.ErrorResponse{
@@ -522,8 +523,8 @@ func TestTaskHandler_Delete(t *testing.T) {
 		{
 			name:   "failure case - ID less than 1",
 			taskID: "0",
-			setupMock: func() *TaskServiceMock {
-				return new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody: common.ErrorResponse{
@@ -533,8 +534,8 @@ func TestTaskHandler_Delete(t *testing.T) {
 		{
 			name:   "failure case - task not found",
 			taskID: "999",
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("Delete", 999).Return(gorm.ErrRecordNotFound)
 				return mockService
 			},
@@ -546,8 +547,8 @@ func TestTaskHandler_Delete(t *testing.T) {
 		{
 			name:   "failure case - service error",
 			taskID: "1",
-			setupMock: func() *TaskServiceMock {
-				mockService := new(TaskServiceMock)
+			setupMock: func() *task_service.TaskServiceMock {
+				mockService := new(task_service.TaskServiceMock)
 				mockService.On("Delete", 1).Return(errors.New("database error"))
 				return mockService
 			},

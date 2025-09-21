@@ -21,6 +21,8 @@ func NewUserHandler(s user_service.UserServiceInterface, ua auth.UserAuthInterfa
 	return &UserHandler{service: s, userAuth: ua}
 }
 
+var _ UserHandlerInterface = (*UserHandler)(nil)
+
 // Register godoc
 // @Summary Register a new user
 // @Description Create a new user account

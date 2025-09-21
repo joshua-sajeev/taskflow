@@ -1,37 +1,33 @@
 package user_service
 
 import (
-	"taskflow/internal/domain/user"
+	"taskflow/internal/dto"
 
 	"github.com/stretchr/testify/mock"
 )
 
-// MockUserRepository implements gorm_user.UserRepositoryInterface
-type MockUserRepository struct {
+type UserServiceMock struct {
 	mock.Mock
 }
 
-func (m *MockUserRepository) Create(u *user.User) error {
-	args := m.Called(u)
-	return args.Error(0)
+var _ UserServiceInterface = (*UserServiceMock)(nil)
+
+func (m *UserServiceMock) CreateUser(req *dto.CreateUserRequest) (*dto.CreateUserResponse, error) {
+	args := m.Called(req)
+	return args.Get(0).(*dto.CreateUserResponse), nil
 }
 
-func (m *MockUserRepository) GetByEmail(email string) (*user.User, error) {
-	args := m.Called(email)
-	return args.Get(0).(*user.User), args.Error(1)
+func (m *UserServiceMock) AuthenticateUser(req *dto.AuthRequest) (*dto.AuthResponse, error) {
+	args := m.Called(req)
+	return args.Get(0).(*dto.AuthResponse), nil
 }
 
-func (m *MockUserRepository) GetByID(id int) (*user.User, error) {
-	args := m.Called(id)
-	return args.Get(0).(*user.User), args.Error(1)
+func (m *UserServiceMock) UpdatePassword(req *dto.UpdatePasswordRequest) (*dto.UpdatePasswordResponse, error) {
+	args := m.Called(req)
+	return args.Get(0).(*dto.UpdatePasswordResponse), nil
 }
 
-func (m *MockUserRepository) Update(u *user.User) error {
-	args := m.Called(u)
-	return args.Error(0)
-}
-
-func (m *MockUserRepository) Delete(id int) error {
-	args := m.Called(id)
-	return args.Error(0)
+func (m *UserServiceMock) DeleteUser(req *dto.DeleteUserRequest) (*dto.DeleteUserResponse, error) {
+	args := m.Called(req)
+	return args.Get(0).(*dto.DeleteUserResponse), nil
 }
