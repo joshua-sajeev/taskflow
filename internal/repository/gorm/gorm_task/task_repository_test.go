@@ -98,41 +98,49 @@ func TestTaskRepository_GetByID(t *testing.T) {
 }
 
 func TestTaskRepository_List(t *testing.T) {
-
 	tasks := []task.Task{
-		{Task: "Buy Milk", Status: "pending"},
-		{Task: "Buy Milk 2", Status: "pending"},
-		{Task: "Buy Milk 3", Status: "pending"},
+		{Task: "Buy Milk", Status: "pending", UserID: 1},
+		{Task: "Buy Milk 2", Status: "pending", UserID: 1},
+		{Task: "Buy Milk 3", Status: "pending", UserID: 2}, // different user
 	}
 
-	t.Run("successful response", func(t *testing.T) {
+	t.Run("successful response with userID filter", func(t *testing.T) {
 		db := setupTestDB(t)
 		r := NewTaskRepository(db)
 
 		for i := range tasks {
-			err := db.Create(&tasks[i]).Error
-			require.NoError(t, err)
+			require.NoError(t, db.Create(&tasks[i]).Error)
 		}
 
-		got, gotErr := r.List()
-		assert.NoError(t, gotErr)
-		assert.Len(t, got, len(tasks))
+		got, err := r.List(1)
+		assert.NoError(t, err)
+		assert.Len(t, got, 2) // only UserID 1 tasks
 
-		for i, taskItem := range tasks {
-			assert.Equal(t, taskItem.Task, got[i].Task)
-			assert.Equal(t, taskItem.Status, got[i].Status)
-			assert.NotZero(t, got[i].ID)
-			assert.NotZero(t, got[i].CreatedAt)
+		for _, tsk := range got {
+			assert.Equal(t, 1, tsk.UserID)
+			assert.NotZero(t, tsk.ID)
+			assert.NotZero(t, tsk.CreatedAt)
 		}
 	})
-	t.Run("Empyt response", func(t *testing.T) {
+
+	t.Run("empty response", func(t *testing.T) {
 		db := setupTestDB(t)
 		r := NewTaskRepository(db)
 
-		got, gotErr := r.List()
-		assert.NoError(t, gotErr)
+		got, err := r.List(99) // userID with no tasks
+		assert.NoError(t, err)
 		assert.Len(t, got, 0)
+	})
 
+	t.Run("database error", func(t *testing.T) {
+		db := setupTestDB(t)
+		// drop table to simulate failure
+		db.Migrator().DropTable(&task.Task{})
+		r := NewTaskRepository(db)
+
+		got, err := r.List(1)
+		assert.Error(t, err)
+		assert.Nil(t, got)
 	})
 }
 

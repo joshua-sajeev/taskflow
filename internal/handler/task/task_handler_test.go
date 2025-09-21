@@ -268,7 +268,7 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 			name: "success case - with tasks",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("ListTasks").Return(dto.ListTasksResponse{
+				mockService.On("ListTasks", 1).Return(dto.ListTasksResponse{
 					Tasks: []dto.GetTaskResponse{
 						{ID: 1, Task: "Buy Milk", Status: "pending"},
 						{ID: 2, Task: "Buy Eggs", Status: "completed"},
@@ -288,7 +288,7 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 			name: "success case - empty list",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("ListTasks").Return(dto.ListTasksResponse{
+				mockService.On("ListTasks", 1).Return(dto.ListTasksResponse{
 					Tasks: []dto.GetTaskResponse{},
 				}, nil)
 				return mockService
@@ -302,12 +302,22 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 			name: "failure case - service error",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("ListTasks").Return(dto.ListTasksResponse{}, errors.New("database error"))
+				mockService.On("ListTasks", 1).Return(dto.ListTasksResponse{}, errors.New("database error"))
 				return mockService
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody: common.ErrorResponse{
 				Message: "database error",
+			},
+		},
+		{
+			name: "failure case - no userID",
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody: common.ErrorResponse{
+				Message: "unauthorized",
 			},
 		},
 	}
@@ -319,7 +329,13 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
-			router.GET("/tasks", handler.ListTasks)
+			router.GET("/tasks", func(c *gin.Context) {
+				// Only set userID for cases other than "no userID"
+				if tt.expectedStatus != http.StatusUnauthorized {
+					c.Set("userID", 1)
+				}
+				handler.ListTasks(c)
+			})
 
 			req := httptest.NewRequest(http.MethodGet, "/tasks", nil)
 			w := httptest.NewRecorder()

@@ -30,9 +30,9 @@ func (r *TaskRepository) GetByID(userID int, id int) (*task.Task, error) {
 	return &t, nil
 }
 
-func (r *TaskRepository) List() ([]task.Task, error) {
+func (r *TaskRepository) List(userID int) ([]task.Task, error) {
 	var tasks []task.Task
-	if err := r.db.Find(&tasks).Error; err != nil {
+	if err := r.db.Where("user_id = ?", userID).Find(&tasks).Error; err != nil {
 		return nil, err
 	}
 	return tasks, nil

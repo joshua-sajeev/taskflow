@@ -36,6 +36,10 @@ func (s *TaskService) CreateTask(userID int, taskRequest *dto.CreateTaskRequest)
 }
 
 func (s *TaskService) GetTask(userID int, id int) (dto.GetTaskResponse, error) {
+	if userID == 0 {
+		return dto.GetTaskResponse{}, errors.New("invalid user")
+	}
+
 	t, err := s.repo.GetByID(userID, id)
 	if err != nil {
 		return dto.GetTaskResponse{}, err
@@ -47,8 +51,12 @@ func (s *TaskService) GetTask(userID int, id int) (dto.GetTaskResponse, error) {
 	}, nil
 }
 
-func (s *TaskService) ListTasks() (dto.ListTasksResponse, error) {
-	tasks, err := s.repo.List() // This returns []task.Task
+func (s *TaskService) ListTasks(userID int) (dto.ListTasksResponse, error) {
+	if userID == 0 {
+		return dto.ListTasksResponse{}, errors.New("invalid user")
+	}
+
+	tasks, err := s.repo.List(userID) // This returns []task.Task
 	if err != nil {
 		return dto.ListTasksResponse{}, err
 	}

@@ -27,8 +27,8 @@ func (m *TaskRepoMock) GetByID(userID int, id int) (*task.Task, error) {
 	return args.Get(0).(*task.Task), args.Error(1)
 }
 
-func (m *TaskRepoMock) List() ([]task.Task, error) {
-	args := m.Called()
+func (m *TaskRepoMock) List(userID int) ([]task.Task, error) {
+	args := m.Called(userID)
 	return args.Get(0).([]task.Task), args.Error(1)
 }
 

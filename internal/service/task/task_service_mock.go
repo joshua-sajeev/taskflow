@@ -21,8 +21,8 @@ func (m *TaskServiceMock) GetTask(userID int, id int) (dto.GetTaskResponse, erro
 	args := m.Called(userID, id)
 	return args.Get(0).(dto.GetTaskResponse), args.Error(1)
 }
-func (m *TaskServiceMock) ListTasks() (dto.ListTasksResponse, error) {
-	args := m.Called()
+func (m *TaskServiceMock) ListTasks(userID int) (dto.ListTasksResponse, error) {
+	args := m.Called(userID)
 	return args.Get(0).(dto.ListTasksResponse), args.Error(1)
 }
 func (m *TaskServiceMock) UpdateStatus(id int, status string) error {

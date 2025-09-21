@@ -98,7 +98,13 @@ func (h *TaskHandler) GetTask(c *gin.Context) {
 // @Failure 500 {object} common.ErrorResponse "Internal server error"
 // @Router /tasks [get]
 func (h *TaskHandler) ListTasks(c *gin.Context) {
-	res, err := h.service.ListTasks()
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, common.ErrorResponse{Message: "unauthorized"})
+		return
+	}
+
+	res, err := h.service.ListTasks(userID.(int))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, common.ErrorResponse{Message: err.Error()})
 		return

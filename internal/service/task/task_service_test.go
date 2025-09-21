@@ -146,7 +146,7 @@ func TestTaskService_GetTask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := tt.setupMock()
 			s := NewTaskService(mockRepo)
-			got, gotErr := s.GetTask(tt.userID, tt.id) // pass userID
+			got, gotErr := s.GetTask(tt.userID, tt.id)
 
 			if tt.wantErr {
 				assert.Error(t, gotErr)
@@ -163,20 +163,19 @@ func TestTaskService_GetTask(t *testing.T) {
 
 func TestTaskService_ListTasks(t *testing.T) {
 	tests := []struct {
-		name string // description of this test case
-		// Named input parameters for receiver constructor.
+		name      string
+		userID    int
 		setupMock func() *gorm_task.TaskRepoMock
 		want      dto.ListTasksResponse
 		wantErr   bool
 	}{
 		{
-			name: "success",
+			name:   "success - single task",
+			userID: 1,
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
-				mockRepo.On("List").Return([]task.Task{
-					{
-						ID: 1, Task: "Buy milk", Status: "pending", CreatedAt: time.Now(),
-					},
+				mockRepo.On("List", 1).Return([]task.Task{
+					{ID: 1, Task: "Buy milk", Status: "pending", CreatedAt: time.Now()},
 				}, nil)
 				return mockRepo
 			},
@@ -188,48 +187,42 @@ func TestTaskService_ListTasks(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "success - multiple tasks",
+			name:   "failure - invalid userID",
+			userID: 0,
 			setupMock: func() *gorm_task.TaskRepoMock {
-				mockRepo := new(gorm_task.TaskRepoMock)
-				mockRepo.On("List").Return([]task.Task{
-					{ID: 1, Task: "Buy Milk", Status: "pending", CreatedAt: time.Now()},
-					{ID: 2, Task: "Buy Eggs", Status: "completed", CreatedAt: time.Now()},
-				}, nil)
-				return mockRepo
+				return new(gorm_task.TaskRepoMock) // repo should not be called
 			},
-			want: dto.ListTasksResponse{
-				Tasks: []dto.GetTaskResponse{
-					{ID: 1, Task: "Buy Milk", Status: "pending"},
-					{ID: 2, Task: "Buy Eggs", Status: "completed"},
-				},
-			},
-			wantErr: false,
+			want:    dto.ListTasksResponse{},
+			wantErr: true,
 		},
 		{
-			name: "failure - db error",
+			name:   "failure - db error",
+			userID: 1,
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
-				mockRepo.On("List").Return(([]task.Task)(nil), errors.New("db error"))
+				// return empty slice instead of nil
+				mockRepo.On("List", 1).Return([]task.Task{}, errors.New("db error"))
 				return mockRepo
 			},
 			want:    dto.ListTasksResponse{},
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := tt.setupMock()
 			s := NewTaskService(mockRepo)
-			got, gotErr := s.ListTasks()
+			got, gotErr := s.ListTasks(tt.userID)
 
 			if tt.wantErr {
 				assert.Error(t, gotErr)
 				assert.Equal(t, dto.ListTasksResponse{}, got)
 			} else {
-				assert.NotZero(t, got)
 				assert.NoError(t, gotErr)
 				assert.Equal(t, tt.want, got)
 			}
+
 			mockRepo.AssertExpectations(t)
 		})
 	}
