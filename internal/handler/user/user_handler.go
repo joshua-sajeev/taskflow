@@ -3,6 +3,7 @@ package user_handler
 import (
 	"net/http"
 
+	"taskflow/internal/auth"
 	"taskflow/internal/common"
 	"taskflow/internal/dto"
 	user_service "taskflow/internal/service/user"
@@ -12,11 +13,12 @@ import (
 )
 
 type UserHandler struct {
-	service user_service.UserServiceInterface
+	service  user_service.UserServiceInterface
+	userAuth auth.UserAuthInterface
 }
 
-func NewUserHandler(s user_service.UserServiceInterface) *UserHandler {
-	return &UserHandler{service: s}
+func NewUserHandler(s user_service.UserServiceInterface, ua auth.UserAuthInterface) *UserHandler {
+	return &UserHandler{service: s, userAuth: ua}
 }
 
 // Register godoc

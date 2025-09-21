@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"taskflow/internal/auth"
 	"taskflow/internal/common"
 	"taskflow/internal/dto"
 	"testing"
@@ -89,7 +90,8 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := tt.setupMock()
-			handler := NewTaskHandler(mockService)
+			mockAuth := new(auth.MockUserAuth)
+			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
 			router.POST("/tasks", handler.CreateTask)
@@ -203,7 +205,8 @@ func TestTaskHandler_GetTask(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := tt.setupMock()
-			handler := NewTaskHandler(mockService)
+			mockAuth := new(auth.MockUserAuth)
+			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
 			router.GET("/tasks/:id", handler.GetTask)
@@ -290,7 +293,8 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := tt.setupMock()
-			handler := NewTaskHandler(mockService)
+			mockAuth := new(auth.MockUserAuth)
+			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
 			router.GET("/tasks", handler.ListTasks)
@@ -432,7 +436,8 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := tt.setupMock()
-			handler := NewTaskHandler(mockService)
+			mockAuth := new(auth.MockUserAuth)
+			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
 			router.PATCH("/tasks/:id/status", handler.UpdateStatus)
@@ -556,7 +561,8 @@ func TestTaskHandler_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := tt.setupMock()
-			handler := NewTaskHandler(mockService)
+			mockAuth := new(auth.MockUserAuth)
+			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
 			router.DELETE("/tasks/:id", handler.Delete)
