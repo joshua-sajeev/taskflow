@@ -4,6 +4,7 @@ import (
 	"errors"
 	"taskflow/internal/domain/task"
 	"taskflow/internal/dto"
+	"taskflow/internal/repository/gorm/gorm_task"
 	"testing"
 	"time"
 
@@ -15,7 +16,7 @@ func TestTaskService_CreateTask(t *testing.T) {
 	tests := []struct {
 		name        string
 		taskRequest *dto.CreateTaskRequest
-		setupMock   func() *TaskRepoMock
+		setupMock   func() *gorm_task.TaskRepoMock
 		wantErr     bool
 	}{
 		{
@@ -23,8 +24,8 @@ func TestTaskService_CreateTask(t *testing.T) {
 			taskRequest: &dto.CreateTaskRequest{
 				Task: "Buy Milk",
 			},
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("Create", mock.MatchedBy(func(tk *task.Task) bool {
 					return tk.Task == "Buy Milk"
 				})).Return(nil)
@@ -37,8 +38,8 @@ func TestTaskService_CreateTask(t *testing.T) {
 			taskRequest: &dto.CreateTaskRequest{
 				Task: "",
 			},
-			setupMock: func() *TaskRepoMock {
-				return new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				return new(gorm_task.TaskRepoMock)
 			},
 			wantErr: true,
 		},
@@ -47,8 +48,8 @@ func TestTaskService_CreateTask(t *testing.T) {
 			taskRequest: &dto.CreateTaskRequest{
 				Task: "Buy Eggs",
 			},
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("Create", mock.MatchedBy(func(tk *task.Task) bool {
 					return tk.Task == "Buy Eggs"
 				})).Return(errors.New("db error"))
@@ -80,15 +81,15 @@ func TestTaskService_GetTask(t *testing.T) {
 	tests := []struct {
 		name      string // description of this test case
 		id        int
-		setupMock func() *TaskRepoMock
+		setupMock func() *gorm_task.TaskRepoMock
 		want      dto.GetTaskResponse
 		wantErr   bool
 	}{
 		{
 			name: "success case",
 			id:   1,
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("GetByID", 1).Return(&task.Task{
 					ID:     1,
 					Task:   "Buy Milk",
@@ -106,8 +107,8 @@ func TestTaskService_GetTask(t *testing.T) {
 		{
 			name: "failure case - task not found",
 			id:   2,
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("GetByID", 2).Return((*task.Task)(nil), errors.New("not found"))
 				return mockRepo
 			},
@@ -140,14 +141,14 @@ func TestTaskService_ListTasks(t *testing.T) {
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
-		setupMock func() *TaskRepoMock
+		setupMock func() *gorm_task.TaskRepoMock
 		want      dto.ListTasksResponse
 		wantErr   bool
 	}{
 		{
 			name: "success",
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("List").Return([]task.Task{
 					{
 						ID: 1, Task: "Buy milk", Status: "pending", CreatedAt: time.Now(),
@@ -164,8 +165,8 @@ func TestTaskService_ListTasks(t *testing.T) {
 		},
 		{
 			name: "success - multiple tasks",
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("List").Return([]task.Task{
 					{ID: 1, Task: "Buy Milk", Status: "pending", CreatedAt: time.Now()},
 					{ID: 2, Task: "Buy Eggs", Status: "completed", CreatedAt: time.Now()},
@@ -182,8 +183,8 @@ func TestTaskService_ListTasks(t *testing.T) {
 		},
 		{
 			name: "failure - db error",
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("List").Return(([]task.Task)(nil), errors.New("db error"))
 				return mockRepo
 			},
@@ -213,7 +214,7 @@ func TestTaskService_ListTasks(t *testing.T) {
 func TestTaskService_UpdateStatus(t *testing.T) {
 	tests := []struct {
 		name      string
-		setupMock func() *TaskRepoMock
+		setupMock func() *gorm_task.TaskRepoMock
 		id        int
 		status    string
 		wantErr   bool
@@ -222,8 +223,8 @@ func TestTaskService_UpdateStatus(t *testing.T) {
 			name:   "success - pending",
 			id:     1,
 			status: "pending",
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("UpdateStatus",
 					mock.MatchedBy(func(id int) bool { return id > 0 }),
 					mock.MatchedBy(func(status string) bool { return status == "pending" || status == "completed" }),
@@ -236,8 +237,8 @@ func TestTaskService_UpdateStatus(t *testing.T) {
 			name:   "success - completed",
 			id:     2,
 			status: "completed",
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("UpdateStatus",
 					mock.Anything,
 					mock.Anything,
@@ -250,8 +251,8 @@ func TestTaskService_UpdateStatus(t *testing.T) {
 			name:   "failure - invalid status",
 			id:     3,
 			status: "invalid",
-			setupMock: func() *TaskRepoMock {
-				return new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				return new(gorm_task.TaskRepoMock)
 			},
 			wantErr: true,
 		},
@@ -259,8 +260,8 @@ func TestTaskService_UpdateStatus(t *testing.T) {
 			name:   "failure - repo error",
 			id:     4,
 			status: "pending",
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("UpdateStatus", mock.Anything, mock.Anything).Return(errors.New("db error"))
 				return mockRepo
 			},
@@ -292,15 +293,15 @@ func TestTaskService_UpdateStatus(t *testing.T) {
 func TestTaskService_Delete(t *testing.T) {
 	tests := []struct {
 		name      string
-		setupMock func() *TaskRepoMock
+		setupMock func() *gorm_task.TaskRepoMock
 		id        int
 		wantErr   bool
 	}{
 		{
 			name: "success",
 			id:   1,
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("Delete", 1).Return(nil)
 				return mockRepo
 			},
@@ -310,8 +311,8 @@ func TestTaskService_Delete(t *testing.T) {
 		{
 			name: "failure - repo error",
 			id:   2,
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("Delete", 2).Return(errors.New("db error"))
 				return mockRepo
 			},
@@ -321,8 +322,8 @@ func TestTaskService_Delete(t *testing.T) {
 		{
 			name: "failure - delete non-existing task",
 			id:   3,
-			setupMock: func() *TaskRepoMock {
-				mockRepo := new(TaskRepoMock)
+			setupMock: func() *gorm_task.TaskRepoMock {
+				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("Delete", 3).Return(errors.New("not found"))
 				return mockRepo
 			},
