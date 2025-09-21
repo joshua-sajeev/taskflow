@@ -6,6 +6,7 @@ import (
 
 	"taskflow/internal/domain/user"
 	"taskflow/internal/dto"
+	"taskflow/internal/repository/gorm/gorm_user"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -15,13 +16,13 @@ func TestCreateUser(t *testing.T) {
 	tests := []struct {
 		name      string
 		req       *dto.CreateUserRequest
-		mockSetup func(m *MockUserRepository)
+		mockSetup func(m *gorm_user.MockUserRepository)
 		wantErr   bool
 	}{
 		{
 			name: "success",
 			req:  &dto.CreateUserRequest{Email: "test@example.com", Password: "secret123"},
-			mockSetup: func(m *MockUserRepository) {
+			mockSetup: func(m *gorm_user.MockUserRepository) {
 				m.On("Create", mock.Anything).Return(nil).Once()
 			},
 			wantErr: false,
@@ -29,7 +30,7 @@ func TestCreateUser(t *testing.T) {
 		{
 			name: "duplicate email",
 			req:  &dto.CreateUserRequest{Email: "dup@example.com", Password: "secret123"},
-			mockSetup: func(m *MockUserRepository) {
+			mockSetup: func(m *gorm_user.MockUserRepository) {
 				m.On("Create", mock.Anything).Return(errors.New("duplicate key")).Once()
 			},
 			wantErr: true,
@@ -38,7 +39,7 @@ func TestCreateUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := new(MockUserRepository)
+			mockRepo := new(gorm_user.MockUserRepository)
 			svc := NewUserService(mockRepo)
 
 			if tt.mockSetup != nil {
@@ -64,13 +65,13 @@ func TestAuthenticateUser(t *testing.T) {
 	tests := []struct {
 		name      string
 		req       *dto.AuthRequest
-		mockSetup func(m *MockUserRepository)
+		mockSetup func(m *gorm_user.MockUserRepository)
 		wantErr   bool
 	}{
 		{
 			name: "success",
 			req:  &dto.AuthRequest{Email: "user@example.com", Password: "mypassword"},
-			mockSetup: func(m *MockUserRepository) {
+			mockSetup: func(m *gorm_user.MockUserRepository) {
 				u := &user.User{ID: 1, Email: "user@example.com", Password: hashedPass}
 				m.On("GetByEmail", "user@example.com").Return(u, nil).Once()
 			},
@@ -79,7 +80,7 @@ func TestAuthenticateUser(t *testing.T) {
 		{
 			name: "invalid password",
 			req:  &dto.AuthRequest{Email: "user2@example.com", Password: "wrongpass"},
-			mockSetup: func(m *MockUserRepository) {
+			mockSetup: func(m *gorm_user.MockUserRepository) {
 				u := &user.User{ID: 2, Email: "user2@example.com", Password: hashedPass}
 				m.On("GetByEmail", "user2@example.com").Return(u, nil).Once()
 			},
@@ -89,7 +90,7 @@ func TestAuthenticateUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := new(MockUserRepository)
+			mockRepo := new(gorm_user.MockUserRepository)
 			svc := NewUserService(mockRepo)
 
 			if tt.mockSetup != nil {
@@ -116,7 +117,7 @@ func TestUpdatePassword(t *testing.T) {
 	tests := []struct {
 		name      string
 		req       *dto.UpdatePasswordRequest
-		mockSetup func(m *MockUserRepository)
+		mockSetup func(m *gorm_user.MockUserRepository)
 		wantErr   bool
 	}{
 		{
@@ -126,7 +127,7 @@ func TestUpdatePassword(t *testing.T) {
 				OldPassword: "oldpass",
 				NewPassword: "newpass123",
 			},
-			mockSetup: func(m *MockUserRepository) {
+			mockSetup: func(m *gorm_user.MockUserRepository) {
 				u := &user.User{ID: 1, Email: "x@example.com", Password: oldHash}
 				m.On("GetByID", 1).Return(u, nil).Once()
 				m.On("Update", mock.Anything).Return(nil).Once()
@@ -140,7 +141,7 @@ func TestUpdatePassword(t *testing.T) {
 				OldPassword: "wrongpass",
 				NewPassword: "newpass",
 			},
-			mockSetup: func(m *MockUserRepository) {
+			mockSetup: func(m *gorm_user.MockUserRepository) {
 				u := &user.User{ID: 2, Email: "y@example.com", Password: oldHash}
 				m.On("GetByID", 2).Return(u, nil).Once()
 			},
@@ -150,7 +151,7 @@ func TestUpdatePassword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := new(MockUserRepository)
+			mockRepo := new(gorm_user.MockUserRepository)
 			svc := NewUserService(mockRepo)
 
 			if tt.mockSetup != nil {
@@ -174,13 +175,13 @@ func TestDeleteUser(t *testing.T) {
 	tests := []struct {
 		name      string
 		req       *dto.DeleteUserRequest
-		mockSetup func(m *MockUserRepository)
+		mockSetup func(m *gorm_user.MockUserRepository)
 		wantErr   bool
 	}{
 		{
 			name: "success",
 			req:  &dto.DeleteUserRequest{ID: 1},
-			mockSetup: func(m *MockUserRepository) {
+			mockSetup: func(m *gorm_user.MockUserRepository) {
 				m.On("Delete", 1).Return(nil).Once()
 			},
 			wantErr: false,
@@ -194,7 +195,7 @@ func TestDeleteUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := new(MockUserRepository)
+			mockRepo := new(gorm_user.MockUserRepository)
 			svc := NewUserService(mockRepo)
 
 			if tt.mockSetup != nil {
