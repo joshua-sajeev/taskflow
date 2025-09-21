@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"taskflow/internal/auth"
 	"taskflow/internal/common"
 	"taskflow/internal/dto"
 	task_service "taskflow/internal/service/task"
@@ -14,11 +15,12 @@ import (
 )
 
 type TaskHandler struct {
-	service task_service.TaskServiceInterface
+	service  task_service.TaskServiceInterface
+	userAuth auth.UserAuthInterface
 }
 
-func NewTaskHandler(s task_service.TaskServiceInterface) *TaskHandler {
-	return &TaskHandler{service: s}
+func NewTaskHandler(s task_service.TaskServiceInterface, ua auth.UserAuthInterface) *TaskHandler {
+	return &TaskHandler{service: s, userAuth: ua}
 }
 
 var _ TaskHandlerInterface = (*TaskHandler)(nil)

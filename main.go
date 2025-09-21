@@ -5,14 +5,15 @@ import (
 	"log"
 	"time"
 
+	"taskflow/internal/auth"
 	"taskflow/internal/domain/task"
 	"taskflow/internal/domain/user"
-	"taskflow/internal/handler/task"
-	"taskflow/internal/handler/user"
+	task_handler "taskflow/internal/handler/task"
+	user_handler "taskflow/internal/handler/user"
 	"taskflow/internal/repository/gorm/gorm_task"
 	"taskflow/internal/repository/gorm/gorm_user"
-	"taskflow/internal/service/task"
-	"taskflow/internal/service/user"
+	task_service "taskflow/internal/service/task"
+	user_service "taskflow/internal/service/user"
 	"taskflow/pkg"
 
 	docs "taskflow/docs"
@@ -79,14 +80,16 @@ func main() {
 		log.Fatalf("AutoMigrate failed: %v", err)
 	}
 
+	secretKey := []byte(pkg.GetEnv("JWT_SECRET", "secret-key"))
 	// Dependency wiring
 	taskRepo := gorm_task.NewTaskRepository(db)
 	taskSvc := task_service.NewTaskService(taskRepo)
-	taskHandler := task_handler.NewTaskHandler(taskSvc)
+	userAuth := auth.NewUserAuth(string(secretKey))
+	taskHandler := task_handler.NewTaskHandler(taskSvc, userAuth)
 
 	userRepo := gorm_user.NewUserRepository(db)
 	userSvc := user_service.NewUserService(userRepo)
-	userHandler := user_handler.NewUserHandler(userSvc)
+	userHandler := user_handler.NewUserHandler(userSvc, userAuth)
 
 	// Router setup
 	r := gin.Default()
@@ -100,7 +103,7 @@ func main() {
 		api.POST("/auth/login", userHandler.Login)
 
 		taskRoutes := api.Group("/tasks")
-		taskRoutes.Use(user_handler.AuthMiddleware())
+		taskRoutes.Use(userAuth.AuthMiddleware())
 		{
 			taskRoutes.POST("", taskHandler.CreateTask)
 			taskRoutes.GET("/:id", taskHandler.GetTask)
@@ -110,7 +113,7 @@ func main() {
 		}
 
 		userRoutes := api.Group("/users")
-		userRoutes.Use(user_handler.AuthMiddleware())
+		userRoutes.Use(userAuth.AuthMiddleware())
 		{
 			userRoutes.PATCH("/password", userHandler.UpdatePassword)
 			userRoutes.DELETE("/account", userHandler.DeleteUser)
