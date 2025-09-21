@@ -12,9 +12,9 @@ type TaskServiceMock struct {
 
 var _ TaskServiceInterface = (*TaskServiceMock)(nil)
 
-func (m *TaskServiceMock) CreateTask(taskRequest *dto.CreateTaskRequest) error {
+func (m *TaskServiceMock) CreateTask(userID int, taskRequest *dto.CreateTaskRequest) error {
 
-	args := m.Called(taskRequest)
+	args := m.Called(userID, taskRequest)
 	return args.Error(0)
 }
 func (m *TaskServiceMock) GetTask(id int) (dto.GetTaskResponse, error) {
