@@ -1,13 +1,32 @@
-name: Run Tests
+# .github/workflows/test-with-mysql.yml
+# Full workflow with MySQL database for integration tests
+
+name: Tests with Database
 
 on:
-  push:
-  pull_request:
+  pull_request:  # Only test PRs, not direct pushes to main
 
 jobs:
   test:
-    name: Go Tests
+    name: Go Tests with MySQL
     runs-on: ubuntu-latest
+    
+    # Start MySQL database
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testdb
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     
     steps:
     - name: Checkout code
@@ -21,11 +40,42 @@ jobs:
     - name: Download dependencies
       run: go mod download
     
+    - name: Wait for MySQL to be ready
+      run: |
+        while ! mysqladmin ping -h"127.0.0.1" -P3306 -uroot -proot --silent; do
+          echo "Waiting for MySQL..."
+          sleep 2
+        done
+        echo "MySQL is ready!"
+    
     - name: Run tests
+      env:
+        MYSQL_HOST: 127.0.0.1
+        MYSQL_PORT: 3306
+        MYSQL_USER: testuser
+        MYSQL_PASSWORD: testpass
+        MYSQL_DATABASE: testdb
+        JWT_SECRET: test-secret-key
       run: go test ./... -v
     
     - name: Run tests with coverage
+      env:
+        MYSQL_HOST: 127.0.0.1
+        MYSQL_PORT: 3306
+        MYSQL_USER: testuser
+        MYSQL_PASSWORD: testpass
+        MYSQL_DATABASE: testdb
+        JWT_SECRET: test-secret-key
       run: go test ./... -v -coverprofile=coverage.out
     
-    - name: Show coverage
+    - name: Show coverage summary
       run: go tool cover -func=coverage.out
+    
+    - name: Generate HTML coverage report
+      run: go tool cover -html=coverage.out -o coverage.html
+    
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage.html
