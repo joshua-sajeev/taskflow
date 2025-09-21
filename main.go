@@ -76,7 +76,7 @@ func main() {
 	sqlDB, _ := db.DB()
 	defer sqlDB.Close()
 
-	if err := db.AutoMigrate(&task.Task{}, &user.User{}); err != nil {
+	if err := db.AutoMigrate(&user.User{}, &task.Task{}); err != nil {
 		log.Fatalf("AutoMigrate failed: %v", err)
 	}
 

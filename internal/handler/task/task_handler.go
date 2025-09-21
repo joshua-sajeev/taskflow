@@ -41,7 +41,13 @@ func (h *TaskHandler) CreateTask(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, common.ErrorResponse{Message: err.Error()})
 		return
 	}
-	if err := h.service.CreateTask(&req); err != nil {
+	userID, exists := c.Get("userID")
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, common.ErrorResponse{Message: "unauthorized"})
+		return
+	}
+	if err := h.service.CreateTask(userID.(int), &req); err != nil {
 		c.JSON(http.StatusBadRequest, common.ErrorResponse{Message: err.Error()})
 		return
 	}

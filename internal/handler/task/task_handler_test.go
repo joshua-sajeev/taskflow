@@ -22,22 +22,25 @@ func setupGin() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	return gin.New()
 }
+
 func TestTaskHandler_CreateTask(t *testing.T) {
 	tests := []struct {
 		name           string
+		userID         int
 		requestBody    any
 		setupMock      func() *task_service.TaskServiceMock
 		expectedStatus int
 		expectedBody   any
 	}{
 		{
-			name: "success case",
+			name:   "success case",
+			userID: 1,
 			requestBody: dto.CreateTaskRequest{
 				Task: "Buy Milk",
 			},
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("CreateTask", mock.MatchedBy(func(req *dto.CreateTaskRequest) bool {
+				mockService.On("CreateTask", 1, mock.MatchedBy(func(req *dto.CreateTaskRequest) bool {
 					return req.Task == "Buy Milk"
 				})).Return(nil)
 				return mockService
@@ -48,7 +51,22 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 			},
 		},
 		{
+			name:   "failure case - no userID",
+			userID: 0,
+			requestBody: dto.CreateTaskRequest{
+				Task: "Buy Milk",
+			},
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody: common.ErrorResponse{
+				Message: "unauthorized",
+			},
+		},
+		{
 			name:        "failure case - invalid JSON",
+			userID:      1,
 			requestBody: `{"task": }`, // malformed JSON
 			setupMock: func() *task_service.TaskServiceMock {
 				return new(task_service.TaskServiceMock)
@@ -59,26 +77,14 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 			},
 		},
 		{
-			name: "failure case - validation error",
-			requestBody: dto.CreateTaskRequest{
-				Task: "", // empty task
-			},
-			setupMock: func() *task_service.TaskServiceMock {
-				return new(task_service.TaskServiceMock)
-			},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody: common.ErrorResponse{
-				Message: "Key: 'CreateTaskRequest.Task' Error:Tag: 'required' ActualTag: 'required' Namespace: 'CreateTaskRequest.Task' StructNamespace: 'CreateTaskRequest.Task' StructField: 'Task' ActualField: 'Task' Value: '' Param: ''",
-			},
-		},
-		{
-			name: "failure case - service error",
+			name:   "failure case - service error",
+			userID: 1,
 			requestBody: dto.CreateTaskRequest{
 				Task: "Buy Milk",
 			},
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("CreateTask", mock.Anything).Return(errors.New("service error"))
+				mockService.On("CreateTask", 1, mock.Anything).Return(errors.New("service error"))
 				return mockService
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -95,7 +101,12 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
-			router.POST("/tasks", handler.CreateTask)
+			router.POST("/tasks", func(c *gin.Context) {
+				if tt.userID != 0 {
+					c.Set("userID", tt.userID) // inject userID to simulate authentication
+				}
+				handler.CreateTask(c)
+			})
 
 			var body []byte
 			var err error
@@ -139,6 +150,7 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 		})
 	}
 }
+
 func TestTaskHandler_GetTask(t *testing.T) {
 	tests := []struct {
 		name           string

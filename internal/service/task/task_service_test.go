@@ -15,47 +15,67 @@ import (
 func TestTaskService_CreateTask(t *testing.T) {
 	tests := []struct {
 		name        string
+		userID      int
 		taskRequest *dto.CreateTaskRequest
 		setupMock   func() *gorm_task.TaskRepoMock
 		wantErr     bool
+		errMessage  string
 	}{
 		{
-			name: "success case - create task Buy Milk",
+			name:   "success case - create task Buy Milk",
+			userID: 1,
 			taskRequest: &dto.CreateTaskRequest{
 				Task: "Buy Milk",
 			},
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("Create", mock.MatchedBy(func(tk *task.Task) bool {
-					return tk.Task == "Buy Milk"
+					return tk.UserID == 1 && tk.Task == "Buy Milk" && tk.Status == "pending"
 				})).Return(nil)
 				return mockRepo
 			},
-			wantErr: false,
+			wantErr:    false,
+			errMessage: "",
 		},
 		{
-			name: "failure case - Empty Task",
+			name:   "failure case - empty task",
+			userID: 1,
 			taskRequest: &dto.CreateTaskRequest{
 				Task: "",
 			},
 			setupMock: func() *gorm_task.TaskRepoMock {
 				return new(gorm_task.TaskRepoMock)
 			},
-			wantErr: true,
+			wantErr:    true,
+			errMessage: "task name cannot be empty",
 		},
 		{
-			name: "failure case - database error",
+			name: "failure case - invalid user",
+			taskRequest: &dto.CreateTaskRequest{
+				Task: "Buy Milk", // <-- non-empty task
+			},
+			setupMock: func() *gorm_task.TaskRepoMock {
+				return new(gorm_task.TaskRepoMock)
+			},
+			userID:     0, // <-- invalid user triggers the error
+			wantErr:    true,
+			errMessage: "invalid user",
+		},
+		{
+			name:   "failure case - database error",
+			userID: 2,
 			taskRequest: &dto.CreateTaskRequest{
 				Task: "Buy Eggs",
 			},
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("Create", mock.MatchedBy(func(tk *task.Task) bool {
-					return tk.Task == "Buy Eggs"
+					return tk.UserID == 2 && tk.Task == "Buy Eggs" && tk.Status == "pending"
 				})).Return(errors.New("db error"))
 				return mockRepo
 			},
-			wantErr: true,
+			wantErr:    true,
+			errMessage: "db error",
 		},
 	}
 
@@ -64,10 +84,11 @@ func TestTaskService_CreateTask(t *testing.T) {
 			mockRepo := tt.setupMock()
 			service := NewTaskService(mockRepo)
 
-			err := service.CreateTask(tt.taskRequest)
+			err := service.CreateTask(tt.userID, tt.taskRequest)
 
 			if tt.wantErr {
 				assert.Error(t, err)
+				assert.EqualError(t, err, tt.errMessage)
 			} else {
 				assert.NoError(t, err)
 			}

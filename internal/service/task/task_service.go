@@ -17,18 +17,24 @@ func NewTaskService(repo gorm_task.TaskRepositoryInterface) *TaskService {
 
 var _ TaskServiceInterface = (*TaskService)(nil)
 
-func (s *TaskService) CreateTask(taskRequest *dto.CreateTaskRequest) error {
+func (s *TaskService) CreateTask(userID int, taskRequest *dto.CreateTaskRequest) error {
+	if userID == 0 {
+		return errors.New("invalid user")
+	}
+
 	if taskRequest.Task == "" {
 		return errors.New("task name cannot be empty")
 	}
 
 	task := task.Task{
+		UserID: userID,
 		Task:   taskRequest.Task,
 		Status: "pending",
 	}
 
 	return s.repo.Create(&task)
 }
+
 func (s *TaskService) GetTask(id int) (dto.GetTaskResponse, error) {
 	t, err := s.repo.GetByID(id)
 	if err != nil {
