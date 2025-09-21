@@ -84,11 +84,12 @@ func main() {
 	// Dependency wiring
 	taskRepo := gorm_task.NewTaskRepository(db)
 	taskSvc := task_service.NewTaskService(taskRepo)
-	userAuth := auth.NewUserAuth(string(secretKey))
-	taskHandler := task_handler.NewTaskHandler(taskSvc, userAuth)
-
 	userRepo := gorm_user.NewUserRepository(db)
 	userSvc := user_service.NewUserService(userRepo)
+
+	userAuth := auth.NewUserAuth(string(secretKey), userRepo)
+
+	taskHandler := task_handler.NewTaskHandler(taskSvc, userAuth)
 	userHandler := user_handler.NewUserHandler(userSvc, userAuth)
 
 	// Router setup

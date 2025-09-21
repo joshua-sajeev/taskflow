@@ -5,17 +5,20 @@ import (
 	"strconv"
 	"strings"
 	"taskflow/internal/common"
+	"taskflow/internal/repository/gorm/gorm_user"
 	"taskflow/pkg"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type UserAuth struct {
 	secretKey []byte
+	userRepo  gorm_user.UserRepositoryInterface
 }
 
-func NewUserAuth(secret string) *UserAuth {
-	return &UserAuth{secretKey: []byte(secret)}
+func NewUserAuth(secret string, userRepo gorm_user.UserRepositoryInterface) *UserAuth {
+	return &UserAuth{secretKey: []byte(secret), userRepo: userRepo}
 }
 
 var _ UserAuthInterface = (*UserAuth)(nil)
@@ -79,7 +82,23 @@ func (ua *UserAuth) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Set userID in context for handlers
+		if ua.userRepo != nil {
+			_, err := ua.userRepo.GetByID(userID)
+			if err != nil {
+				if err == gorm.ErrRecordNotFound {
+					c.JSON(http.StatusUnauthorized, common.ErrorResponse{
+						Message: "user account not found",
+					})
+				} else {
+					c.JSON(http.StatusInternalServerError, common.ErrorResponse{
+						Message: "authentication failed",
+					})
+				}
+				c.Abort()
+				return
+			}
+		}
+
 		c.Set("userID", userID)
 		c.Next()
 	}
@@ -110,15 +129,30 @@ func (ua *UserAuth) OptionalAuthMiddleware() gin.HandlerFunc {
 		}
 
 		claimsMap := *claims
+		var userID int
+		var userIDValid bool
+
 		switch v := claimsMap["user_id"].(type) {
 		case float64:
-			c.Set("userID", int(v))
+			userID = int(v)
+			userIDValid = true
 		case int:
-			c.Set("userID", v)
+			userID = v
+			userIDValid = true
 		case string:
-			if userID, err := strconv.Atoi(v); err == nil {
-				c.Set("userID", userID)
+			if id, err := strconv.Atoi(v); err == nil {
+				userID = id
+				userIDValid = true
 			}
+		}
+
+		if userIDValid && ua.userRepo != nil {
+			_, err := ua.userRepo.GetByID(userID)
+			if err != nil {
+				c.Next()
+				return
+			}
+			c.Set("userID", userID)
 		}
 
 		c.Next()
