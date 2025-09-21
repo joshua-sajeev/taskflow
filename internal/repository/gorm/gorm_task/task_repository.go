@@ -21,9 +21,10 @@ func (r *TaskRepository) Create(t *task.Task) error {
 	return r.db.Create(t).Error
 }
 
-func (r *TaskRepository) GetByID(id int) (*task.Task, error) {
+func (r *TaskRepository) GetByID(userID int, id int) (*task.Task, error) {
 	var t task.Task
-	if err := r.db.First(&t, id).Error; err != nil {
+	err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&t).Error
+	if err != nil {
 		return nil, err
 	}
 	return &t, nil

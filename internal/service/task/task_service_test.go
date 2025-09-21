@@ -102,19 +102,22 @@ func TestTaskService_GetTask(t *testing.T) {
 	tests := []struct {
 		name      string // description of this test case
 		id        int
+		userID    int
 		setupMock func() *gorm_task.TaskRepoMock
 		want      dto.GetTaskResponse
 		wantErr   bool
 	}{
 		{
-			name: "success case",
-			id:   1,
+			name:   "success case",
+			id:     1,
+			userID: 1,
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
-				mockRepo.On("GetByID", 1).Return(&task.Task{
+				mockRepo.On("GetByID", 1, 1).Return(&task.Task{
 					ID:     1,
 					Task:   "Buy Milk",
 					Status: "pending",
+					UserID: 1,
 				}, nil)
 				return mockRepo
 			},
@@ -126,11 +129,12 @@ func TestTaskService_GetTask(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "failure case - task not found",
-			id:   2,
+			name:   "failure case - task not found",
+			id:     2,
+			userID: 1,
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
-				mockRepo.On("GetByID", 2).Return((*task.Task)(nil), errors.New("not found"))
+				mockRepo.On("GetByID", 1, 2).Return((*task.Task)(nil), errors.New("not found"))
 				return mockRepo
 			},
 			want:    dto.GetTaskResponse{},
@@ -142,13 +146,12 @@ func TestTaskService_GetTask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := tt.setupMock()
 			s := NewTaskService(mockRepo)
-			got, gotErr := s.GetTask(tt.id)
+			got, gotErr := s.GetTask(tt.userID, tt.id) // pass userID
 
 			if tt.wantErr {
 				assert.Error(t, gotErr)
 				assert.Equal(t, dto.GetTaskResponse{}, got)
 			} else {
-				assert.NotZero(t, got)
 				assert.NoError(t, gotErr)
 				assert.Equal(t, tt.want, got)
 			}

@@ -17,8 +17,8 @@ func (m *TaskServiceMock) CreateTask(userID int, taskRequest *dto.CreateTaskRequ
 	args := m.Called(userID, taskRequest)
 	return args.Error(0)
 }
-func (m *TaskServiceMock) GetTask(id int) (dto.GetTaskResponse, error) {
-	args := m.Called(id)
+func (m *TaskServiceMock) GetTask(userID int, id int) (dto.GetTaskResponse, error) {
+	args := m.Called(userID, id)
 	return args.Get(0).(dto.GetTaskResponse), args.Error(1)
 }
 func (m *TaskServiceMock) ListTasks() (dto.ListTasksResponse, error) {

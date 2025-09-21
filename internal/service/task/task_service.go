@@ -35,8 +35,8 @@ func (s *TaskService) CreateTask(userID int, taskRequest *dto.CreateTaskRequest)
 	return s.repo.Create(&task)
 }
 
-func (s *TaskService) GetTask(id int) (dto.GetTaskResponse, error) {
-	t, err := s.repo.GetByID(id)
+func (s *TaskService) GetTask(userID int, id int) (dto.GetTaskResponse, error) {
+	t, err := s.repo.GetByID(userID, id)
 	if err != nil {
 		return dto.GetTaskResponse{}, err
 	}

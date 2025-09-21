@@ -154,6 +154,7 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 func TestTaskHandler_GetTask(t *testing.T) {
 	tests := []struct {
 		name           string
+		userID         int
 		taskID         string
 		setupMock      func() *task_service.TaskServiceMock
 		expectedStatus int
@@ -161,10 +162,11 @@ func TestTaskHandler_GetTask(t *testing.T) {
 	}{
 		{
 			name:   "success case",
+			userID: 1,
 			taskID: "1",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("GetTask", 1).Return(dto.GetTaskResponse{
+				mockService.On("GetTask", 1, 1).Return(dto.GetTaskResponse{
 					ID:     1,
 					Task:   "Buy Milk",
 					Status: "pending",
@@ -180,6 +182,7 @@ func TestTaskHandler_GetTask(t *testing.T) {
 		},
 		{
 			name:   "failure case - invalid ID",
+			userID: 1,
 			taskID: "invalid",
 			setupMock: func() *task_service.TaskServiceMock {
 				return new(task_service.TaskServiceMock)
@@ -191,6 +194,7 @@ func TestTaskHandler_GetTask(t *testing.T) {
 		},
 		{
 			name:   "failure case - ID less than 1",
+			userID: 1,
 			taskID: "0",
 			setupMock: func() *task_service.TaskServiceMock {
 				return new(task_service.TaskServiceMock)
@@ -202,10 +206,11 @@ func TestTaskHandler_GetTask(t *testing.T) {
 		},
 		{
 			name:   "failure case - task not found",
+			userID: 1,
 			taskID: "999",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("GetTask", 999).Return(dto.GetTaskResponse{}, errors.New("not found"))
+				mockService.On("GetTask", 1, 999).Return(dto.GetTaskResponse{}, errors.New("not found"))
 				return mockService
 			},
 			expectedStatus: http.StatusNotFound,
@@ -222,7 +227,11 @@ func TestTaskHandler_GetTask(t *testing.T) {
 			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
-			router.GET("/tasks/:id", handler.GetTask)
+			// Wrap handler to inject userID simulating authenticated request
+			router.GET("/tasks/:id", func(c *gin.Context) {
+				c.Set("userID", tt.userID)
+				handler.GetTask(c)
+			})
 
 			req := httptest.NewRequest(http.MethodGet, "/tasks/"+tt.taskID, nil)
 			w := httptest.NewRecorder()

@@ -22,8 +22,8 @@ func (m *TaskRepoMock) Create(task *task.Task) error {
 //	if args.Get(0) == nil {
 //		return nil, args.Error(1)
 //	}
-func (m *TaskRepoMock) GetByID(id int) (*task.Task, error) {
-	args := m.Called(id)
+func (m *TaskRepoMock) GetByID(userID int, id int) (*task.Task, error) {
+	args := m.Called(userID, id)
 	return args.Get(0).(*task.Task), args.Error(1)
 }
 

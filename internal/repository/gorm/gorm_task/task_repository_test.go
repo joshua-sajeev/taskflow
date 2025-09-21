@@ -71,29 +71,32 @@ func TestTaskRepository_GetByID(t *testing.T) {
 		taskToCreate := task.Task{
 			Task:   "Buy Milk",
 			Status: "pending",
+			UserID: 1,
 		}
 		err := db.Create(&taskToCreate).Error
-		require.NoError(t, err) // now ID is set
+		require.NoError(t, err)
 
 		r := NewTaskRepository(db)
-		got, gotErr := r.GetByID(taskToCreate.ID)
+		got, gotErr := r.GetByID(1, taskToCreate.ID)
 
 		assert.NoError(t, gotErr)
 		assert.NotNil(t, got)
 		assert.Equal(t, taskToCreate.ID, got.ID)
 		assert.Equal(t, taskToCreate.Task, got.Task)
 		assert.Equal(t, taskToCreate.Status, got.Status)
+		assert.Equal(t, taskToCreate.UserID, got.UserID)
 	})
 
 	t.Run("non-existing id", func(t *testing.T) {
 		db := setupTestDB(t)
 		r := NewTaskRepository(db)
-		got, gotErr := r.GetByID(9999)
+		got, gotErr := r.GetByID(1, 9999)
 
 		assert.Error(t, gotErr)
 		assert.Nil(t, got)
 	})
 }
+
 func TestTaskRepository_List(t *testing.T) {
 
 	tasks := []task.Task{
