@@ -22,13 +22,13 @@ func (m *TaskRepoMock) Create(task *task.Task) error {
 //	if args.Get(0) == nil {
 //		return nil, args.Error(1)
 //	}
-func (m *TaskRepoMock) GetByID(id int) (*task.Task, error) {
-	args := m.Called(id)
+func (m *TaskRepoMock) GetByID(userID int, id int) (*task.Task, error) {
+	args := m.Called(userID, id)
 	return args.Get(0).(*task.Task), args.Error(1)
 }
 
-func (m *TaskRepoMock) List() ([]task.Task, error) {
-	args := m.Called()
+func (m *TaskRepoMock) List(userID int) ([]task.Task, error) {
+	args := m.Called(userID)
 	return args.Get(0).([]task.Task), args.Error(1)
 }
 
@@ -37,14 +37,14 @@ func (m *TaskRepoMock) Update(task *task.Task) error {
 	return args.Error(0)
 }
 
-func (m *TaskRepoMock) Delete(id int) error {
+func (m *TaskRepoMock) Delete(userID int, id int) error {
 
-	args := m.Called(id)
+	args := m.Called(userID, id)
 	return args.Error(0)
 }
 
-func (m *TaskRepoMock) UpdateStatus(id int, status string) error {
+func (m *TaskRepoMock) UpdateStatus(userID int, id int, status string) error {
 
-	args := m.Called(id, status)
+	args := m.Called(userID, id, status)
 	return args.Error(0)
 }

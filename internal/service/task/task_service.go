@@ -17,20 +17,30 @@ func NewTaskService(repo gorm_task.TaskRepositoryInterface) *TaskService {
 
 var _ TaskServiceInterface = (*TaskService)(nil)
 
-func (s *TaskService) CreateTask(taskRequest *dto.CreateTaskRequest) error {
+func (s *TaskService) CreateTask(userID int, taskRequest *dto.CreateTaskRequest) error {
+	if userID == 0 {
+		return errors.New("invalid user")
+	}
+
 	if taskRequest.Task == "" {
 		return errors.New("task name cannot be empty")
 	}
 
 	task := task.Task{
+		UserID: userID,
 		Task:   taskRequest.Task,
 		Status: "pending",
 	}
 
 	return s.repo.Create(&task)
 }
-func (s *TaskService) GetTask(id int) (dto.GetTaskResponse, error) {
-	t, err := s.repo.GetByID(id)
+
+func (s *TaskService) GetTask(userID int, id int) (dto.GetTaskResponse, error) {
+	if userID == 0 {
+		return dto.GetTaskResponse{}, errors.New("invalid user")
+	}
+
+	t, err := s.repo.GetByID(userID, id)
 	if err != nil {
 		return dto.GetTaskResponse{}, err
 	}
@@ -41,8 +51,12 @@ func (s *TaskService) GetTask(id int) (dto.GetTaskResponse, error) {
 	}, nil
 }
 
-func (s *TaskService) ListTasks() (dto.ListTasksResponse, error) {
-	tasks, err := s.repo.List() // This returns []task.Task
+func (s *TaskService) ListTasks(userID int) (dto.ListTasksResponse, error) {
+	if userID == 0 {
+		return dto.ListTasksResponse{}, errors.New("invalid user")
+	}
+
+	tasks, err := s.repo.List(userID) // This returns []task.Task
 	if err != nil {
 		return dto.ListTasksResponse{}, err
 	}
@@ -62,13 +76,13 @@ func (s *TaskService) ListTasks() (dto.ListTasksResponse, error) {
 	}, nil
 }
 
-func (s *TaskService) UpdateStatus(id int, status string) error {
+func (s *TaskService) UpdateStatus(userID int, id int, status string) error {
 	if status != "pending" && status != "completed" {
 		return errors.New("invalid status")
 	}
-	return s.repo.UpdateStatus(id, status)
+	return s.repo.UpdateStatus(userID, id, status)
 }
 
-func (s *TaskService) Delete(id int) error {
-	return s.repo.Delete(id)
+func (s *TaskService) Delete(userID int, id int) error {
+	return s.repo.Delete(userID, id)
 }

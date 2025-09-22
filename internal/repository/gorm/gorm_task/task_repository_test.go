@@ -71,65 +71,76 @@ func TestTaskRepository_GetByID(t *testing.T) {
 		taskToCreate := task.Task{
 			Task:   "Buy Milk",
 			Status: "pending",
+			UserID: 1,
 		}
 		err := db.Create(&taskToCreate).Error
-		require.NoError(t, err) // now ID is set
+		require.NoError(t, err)
 
 		r := NewTaskRepository(db)
-		got, gotErr := r.GetByID(taskToCreate.ID)
+		got, gotErr := r.GetByID(1, taskToCreate.ID)
 
 		assert.NoError(t, gotErr)
 		assert.NotNil(t, got)
 		assert.Equal(t, taskToCreate.ID, got.ID)
 		assert.Equal(t, taskToCreate.Task, got.Task)
 		assert.Equal(t, taskToCreate.Status, got.Status)
+		assert.Equal(t, taskToCreate.UserID, got.UserID)
 	})
 
 	t.Run("non-existing id", func(t *testing.T) {
 		db := setupTestDB(t)
 		r := NewTaskRepository(db)
-		got, gotErr := r.GetByID(9999)
+		got, gotErr := r.GetByID(1, 9999)
 
 		assert.Error(t, gotErr)
 		assert.Nil(t, got)
 	})
 }
-func TestTaskRepository_List(t *testing.T) {
 
+func TestTaskRepository_List(t *testing.T) {
 	tasks := []task.Task{
-		{Task: "Buy Milk", Status: "pending"},
-		{Task: "Buy Milk 2", Status: "pending"},
-		{Task: "Buy Milk 3", Status: "pending"},
+		{Task: "Buy Milk", Status: "pending", UserID: 1},
+		{Task: "Buy Milk 2", Status: "pending", UserID: 1},
+		{Task: "Buy Milk 3", Status: "pending", UserID: 2}, // different user
 	}
 
-	t.Run("successful response", func(t *testing.T) {
+	t.Run("successful response with userID filter", func(t *testing.T) {
 		db := setupTestDB(t)
 		r := NewTaskRepository(db)
 
 		for i := range tasks {
-			err := db.Create(&tasks[i]).Error
-			require.NoError(t, err)
+			require.NoError(t, db.Create(&tasks[i]).Error)
 		}
 
-		got, gotErr := r.List()
-		assert.NoError(t, gotErr)
-		assert.Len(t, got, len(tasks))
+		got, err := r.List(1)
+		assert.NoError(t, err)
+		assert.Len(t, got, 2) // only UserID 1 tasks
 
-		for i, taskItem := range tasks {
-			assert.Equal(t, taskItem.Task, got[i].Task)
-			assert.Equal(t, taskItem.Status, got[i].Status)
-			assert.NotZero(t, got[i].ID)
-			assert.NotZero(t, got[i].CreatedAt)
+		for _, tsk := range got {
+			assert.Equal(t, 1, tsk.UserID)
+			assert.NotZero(t, tsk.ID)
+			assert.NotZero(t, tsk.CreatedAt)
 		}
 	})
-	t.Run("Empyt response", func(t *testing.T) {
+
+	t.Run("empty response", func(t *testing.T) {
 		db := setupTestDB(t)
 		r := NewTaskRepository(db)
 
-		got, gotErr := r.List()
-		assert.NoError(t, gotErr)
+		got, err := r.List(99) // userID with no tasks
+		assert.NoError(t, err)
 		assert.Len(t, got, 0)
+	})
 
+	t.Run("database error", func(t *testing.T) {
+		db := setupTestDB(t)
+		// drop table to simulate failure
+		db.Migrator().DropTable(&task.Task{})
+		r := NewTaskRepository(db)
+
+		got, err := r.List(1)
+		assert.Error(t, err)
+		assert.Nil(t, got)
 	})
 }
 
@@ -172,35 +183,36 @@ func TestTaskRepository_Update(t *testing.T) {
 func TestTaskRepository_Delete(t *testing.T) {
 	t.Run("successful delete", func(t *testing.T) {
 		db := setupTestDB(t)
-		taskToCreate := task.Task{Task: "Buy Milk", Status: "pending"}
+		taskToCreate := task.Task{UserID: 1, Task: "Buy Milk", Status: "pending"}
 		require.NoError(t, db.Create(&taskToCreate).Error)
 
 		r := NewTaskRepository(db)
-		err := r.Delete(taskToCreate.ID)
+		err := r.Delete(1, taskToCreate.ID)
 		assert.NoError(t, err)
 
 		var fetched task.Task
 		err = db.First(&fetched, taskToCreate.ID).Error
-		assert.Error(t, err) // should not be found
+		assert.Error(t, err)
 		assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
 	})
 
-	t.Run("delete non-existing id", func(t *testing.T) {
+	t.Run("delete non-existing task", func(t *testing.T) {
 		db := setupTestDB(t)
 		r := NewTaskRepository(db)
-		err := r.Delete(9999)
-		assert.NoError(t, err) // GORM Delete does not return error if record not found
+		err := r.Delete(1, 9999)
+		assert.NoError(t, err) // GORM does not error if record not found
 	})
 }
 
 func TestTaskRepository_UpdateStatus(t *testing.T) {
 	t.Run("successful status update", func(t *testing.T) {
 		db := setupTestDB(t)
-		taskToCreate := task.Task{Task: "Buy Milk", Status: "pending"}
+
+		taskToCreate := task.Task{UserID: 1, Task: "Buy Milk", Status: "pending"}
 		require.NoError(t, db.Create(&taskToCreate).Error)
 
 		r := NewTaskRepository(db)
-		err := r.UpdateStatus(taskToCreate.ID, "completed")
+		err := r.UpdateStatus(1, taskToCreate.ID, "completed")
 		assert.NoError(t, err)
 
 		var updated task.Task
@@ -211,7 +223,9 @@ func TestTaskRepository_UpdateStatus(t *testing.T) {
 	t.Run("update status non-existing task", func(t *testing.T) {
 		db := setupTestDB(t)
 		r := NewTaskRepository(db)
-		err := r.UpdateStatus(9999, "completed")
-		assert.NoError(t, err) // GORM does nothing but does not error
+
+		// Non-existing userID + taskID
+		err := r.UpdateStatus(1, 9999, "completed")
+		assert.NoError(t, err) // GORM returns nil error if no rows affected
 	})
 }

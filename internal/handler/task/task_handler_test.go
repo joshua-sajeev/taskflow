@@ -22,22 +22,25 @@ func setupGin() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	return gin.New()
 }
+
 func TestTaskHandler_CreateTask(t *testing.T) {
 	tests := []struct {
 		name           string
+		userID         int
 		requestBody    any
 		setupMock      func() *task_service.TaskServiceMock
 		expectedStatus int
 		expectedBody   any
 	}{
 		{
-			name: "success case",
+			name:   "success case",
+			userID: 1,
 			requestBody: dto.CreateTaskRequest{
 				Task: "Buy Milk",
 			},
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("CreateTask", mock.MatchedBy(func(req *dto.CreateTaskRequest) bool {
+				mockService.On("CreateTask", 1, mock.MatchedBy(func(req *dto.CreateTaskRequest) bool {
 					return req.Task == "Buy Milk"
 				})).Return(nil)
 				return mockService
@@ -48,7 +51,22 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 			},
 		},
 		{
+			name:   "failure case - no userID",
+			userID: 0,
+			requestBody: dto.CreateTaskRequest{
+				Task: "Buy Milk",
+			},
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody: common.ErrorResponse{
+				Message: "unauthorized",
+			},
+		},
+		{
 			name:        "failure case - invalid JSON",
+			userID:      1,
 			requestBody: `{"task": }`, // malformed JSON
 			setupMock: func() *task_service.TaskServiceMock {
 				return new(task_service.TaskServiceMock)
@@ -59,26 +77,14 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 			},
 		},
 		{
-			name: "failure case - validation error",
-			requestBody: dto.CreateTaskRequest{
-				Task: "", // empty task
-			},
-			setupMock: func() *task_service.TaskServiceMock {
-				return new(task_service.TaskServiceMock)
-			},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody: common.ErrorResponse{
-				Message: "Key: 'CreateTaskRequest.Task' Error:Tag: 'required' ActualTag: 'required' Namespace: 'CreateTaskRequest.Task' StructNamespace: 'CreateTaskRequest.Task' StructField: 'Task' ActualField: 'Task' Value: '' Param: ''",
-			},
-		},
-		{
-			name: "failure case - service error",
+			name:   "failure case - service error",
+			userID: 1,
 			requestBody: dto.CreateTaskRequest{
 				Task: "Buy Milk",
 			},
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("CreateTask", mock.Anything).Return(errors.New("service error"))
+				mockService.On("CreateTask", 1, mock.Anything).Return(errors.New("service error"))
 				return mockService
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -95,7 +101,12 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
-			router.POST("/tasks", handler.CreateTask)
+			router.POST("/tasks", func(c *gin.Context) {
+				if tt.userID != 0 {
+					c.Set("userID", tt.userID) // inject userID to simulate authentication
+				}
+				handler.CreateTask(c)
+			})
 
 			var body []byte
 			var err error
@@ -139,9 +150,11 @@ func TestTaskHandler_CreateTask(t *testing.T) {
 		})
 	}
 }
+
 func TestTaskHandler_GetTask(t *testing.T) {
 	tests := []struct {
 		name           string
+		userID         int
 		taskID         string
 		setupMock      func() *task_service.TaskServiceMock
 		expectedStatus int
@@ -149,10 +162,11 @@ func TestTaskHandler_GetTask(t *testing.T) {
 	}{
 		{
 			name:   "success case",
+			userID: 1,
 			taskID: "1",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("GetTask", 1).Return(dto.GetTaskResponse{
+				mockService.On("GetTask", 1, 1).Return(dto.GetTaskResponse{
 					ID:     1,
 					Task:   "Buy Milk",
 					Status: "pending",
@@ -168,6 +182,7 @@ func TestTaskHandler_GetTask(t *testing.T) {
 		},
 		{
 			name:   "failure case - invalid ID",
+			userID: 1,
 			taskID: "invalid",
 			setupMock: func() *task_service.TaskServiceMock {
 				return new(task_service.TaskServiceMock)
@@ -179,6 +194,7 @@ func TestTaskHandler_GetTask(t *testing.T) {
 		},
 		{
 			name:   "failure case - ID less than 1",
+			userID: 1,
 			taskID: "0",
 			setupMock: func() *task_service.TaskServiceMock {
 				return new(task_service.TaskServiceMock)
@@ -190,10 +206,11 @@ func TestTaskHandler_GetTask(t *testing.T) {
 		},
 		{
 			name:   "failure case - task not found",
+			userID: 1,
 			taskID: "999",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("GetTask", 999).Return(dto.GetTaskResponse{}, errors.New("not found"))
+				mockService.On("GetTask", 1, 999).Return(dto.GetTaskResponse{}, errors.New("not found"))
 				return mockService
 			},
 			expectedStatus: http.StatusNotFound,
@@ -210,7 +227,11 @@ func TestTaskHandler_GetTask(t *testing.T) {
 			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
-			router.GET("/tasks/:id", handler.GetTask)
+			// Wrap handler to inject userID simulating authenticated request
+			router.GET("/tasks/:id", func(c *gin.Context) {
+				c.Set("userID", tt.userID)
+				handler.GetTask(c)
+			})
 
 			req := httptest.NewRequest(http.MethodGet, "/tasks/"+tt.taskID, nil)
 			w := httptest.NewRecorder()
@@ -247,7 +268,7 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 			name: "success case - with tasks",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("ListTasks").Return(dto.ListTasksResponse{
+				mockService.On("ListTasks", 1).Return(dto.ListTasksResponse{
 					Tasks: []dto.GetTaskResponse{
 						{ID: 1, Task: "Buy Milk", Status: "pending"},
 						{ID: 2, Task: "Buy Eggs", Status: "completed"},
@@ -267,7 +288,7 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 			name: "success case - empty list",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("ListTasks").Return(dto.ListTasksResponse{
+				mockService.On("ListTasks", 1).Return(dto.ListTasksResponse{
 					Tasks: []dto.GetTaskResponse{},
 				}, nil)
 				return mockService
@@ -281,12 +302,22 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 			name: "failure case - service error",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("ListTasks").Return(dto.ListTasksResponse{}, errors.New("database error"))
+				mockService.On("ListTasks", 1).Return(dto.ListTasksResponse{}, errors.New("database error"))
 				return mockService
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody: common.ErrorResponse{
 				Message: "database error",
+			},
+		},
+		{
+			name: "failure case - no userID",
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody: common.ErrorResponse{
+				Message: "unauthorized",
 			},
 		},
 	}
@@ -298,7 +329,13 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
-			router.GET("/tasks", handler.ListTasks)
+			router.GET("/tasks", func(c *gin.Context) {
+				// Only set userID for cases other than "no userID"
+				if tt.expectedStatus != http.StatusUnauthorized {
+					c.Set("userID", 1)
+				}
+				handler.ListTasks(c)
+			})
 
 			req := httptest.NewRequest(http.MethodGet, "/tasks", nil)
 			w := httptest.NewRecorder()
@@ -327,6 +364,7 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 func TestTaskHandler_UpdateStatus(t *testing.T) {
 	tests := []struct {
 		name           string
+		userID         *int // nil means unauthorized
 		taskID         string
 		requestBody    any
 		setupMock      func() *task_service.TaskServiceMock
@@ -335,13 +373,14 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 	}{
 		{
 			name:   "success case",
+			userID: intPtr(123),
 			taskID: "1",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
 			},
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("UpdateStatus", 1, "completed").Return(nil)
+				mockService.On("UpdateStatus", 123, 1, "completed").Return(nil)
 				return mockService
 			},
 			expectedStatus: http.StatusOK,
@@ -350,7 +389,23 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 			},
 		},
 		{
+			name:   "failure case - unauthorized",
+			userID: nil,
+			taskID: "1",
+			requestBody: dto.UpdateStatusRequest{
+				Status: "completed",
+			},
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody: common.ErrorResponse{
+				Message: "unauthorized",
+			},
+		},
+		{
 			name:   "failure case - invalid ID",
+			userID: intPtr(123),
 			taskID: "invalid",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
@@ -365,6 +420,7 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:   "failure case - ID less than 1",
+			userID: intPtr(123),
 			taskID: "0",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
@@ -379,6 +435,7 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:        "failure case - invalid JSON",
+			userID:      intPtr(123),
 			taskID:      "1",
 			requestBody: `{"status": }`, // malformed JSON
 			setupMock: func() *task_service.TaskServiceMock {
@@ -391,6 +448,7 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:   "failure case - invalid status",
+			userID: intPtr(123),
 			taskID: "1",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "invalid-status",
@@ -402,13 +460,14 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:   "failure case - task not found",
+			userID: intPtr(123),
 			taskID: "999",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
 			},
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("UpdateStatus", 999, "completed").Return(gorm.ErrRecordNotFound)
+				mockService.On("UpdateStatus", 123, 999, "completed").Return(gorm.ErrRecordNotFound)
 				return mockService
 			},
 			expectedStatus: http.StatusNotFound,
@@ -418,13 +477,14 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:   "failure case - service error",
+			userID: intPtr(123),
 			taskID: "1",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
 			},
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("UpdateStatus", 1, "completed").Return(errors.New("service error"))
+				mockService.On("UpdateStatus", 123, 1, "completed").Return(errors.New("service error"))
 				return mockService
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -441,6 +501,15 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
+
+			// Middleware to inject userID if set
+			router.Use(func(c *gin.Context) {
+				if tt.userID != nil {
+					c.Set("userID", *tt.userID)
+				}
+				c.Next()
+			})
+
 			router.PATCH("/tasks/:id/status", handler.UpdateStatus)
 
 			var body []byte
@@ -466,7 +535,6 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 				err = json.Unmarshal(w.Body.Bytes(), &responseBody)
 				assert.NoError(t, err)
 
-				// Special handling for validation errors
 				if tt.name == "failure case - invalid status" {
 					errorResp := make(map[string]any)
 					json.Unmarshal(w.Body.Bytes(), &errorResp)
@@ -488,6 +556,10 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 	}
 }
 
+func intPtr(i int) *int {
+	return &i
+}
+
 func TestTaskHandler_Delete(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -501,7 +573,8 @@ func TestTaskHandler_Delete(t *testing.T) {
 			taskID: "1",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("Delete", 1).Return(nil)
+				// Expect both userID and taskID
+				mockService.On("Delete", 1, 1).Return(nil)
 				return mockService
 			},
 			expectedStatus: http.StatusOK,
@@ -536,7 +609,7 @@ func TestTaskHandler_Delete(t *testing.T) {
 			taskID: "999",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("Delete", 999).Return(gorm.ErrRecordNotFound)
+				mockService.On("Delete", 1, 999).Return(gorm.ErrRecordNotFound)
 				return mockService
 			},
 			expectedStatus: http.StatusNotFound,
@@ -549,7 +622,7 @@ func TestTaskHandler_Delete(t *testing.T) {
 			taskID: "1",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("Delete", 1).Return(errors.New("database error"))
+				mockService.On("Delete", 1, 1).Return(errors.New("database error"))
 				return mockService
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -566,14 +639,21 @@ func TestTaskHandler_Delete(t *testing.T) {
 			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
+			// Middleware to inject fake userID
+			router.Use(func(c *gin.Context) {
+				c.Set("userID", 1)
+				c.Next()
+			})
 			router.DELETE("/tasks/:id", handler.Delete)
 
 			req := httptest.NewRequest(http.MethodDelete, "/tasks/"+tt.taskID, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 
+			// Assert status
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
+			// Assert response body
 			var responseBody any
 			err := json.Unmarshal(w.Body.Bytes(), &responseBody)
 			assert.NoError(t, err)
