@@ -183,35 +183,36 @@ func TestTaskRepository_Update(t *testing.T) {
 func TestTaskRepository_Delete(t *testing.T) {
 	t.Run("successful delete", func(t *testing.T) {
 		db := setupTestDB(t)
-		taskToCreate := task.Task{Task: "Buy Milk", Status: "pending"}
+		taskToCreate := task.Task{UserID: 1, Task: "Buy Milk", Status: "pending"}
 		require.NoError(t, db.Create(&taskToCreate).Error)
 
 		r := NewTaskRepository(db)
-		err := r.Delete(taskToCreate.ID)
+		err := r.Delete(1, taskToCreate.ID)
 		assert.NoError(t, err)
 
 		var fetched task.Task
 		err = db.First(&fetched, taskToCreate.ID).Error
-		assert.Error(t, err) // should not be found
+		assert.Error(t, err)
 		assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
 	})
 
-	t.Run("delete non-existing id", func(t *testing.T) {
+	t.Run("delete non-existing task", func(t *testing.T) {
 		db := setupTestDB(t)
 		r := NewTaskRepository(db)
-		err := r.Delete(9999)
-		assert.NoError(t, err) // GORM Delete does not return error if record not found
+		err := r.Delete(1, 9999)
+		assert.NoError(t, err) // GORM does not error if record not found
 	})
 }
 
 func TestTaskRepository_UpdateStatus(t *testing.T) {
 	t.Run("successful status update", func(t *testing.T) {
 		db := setupTestDB(t)
-		taskToCreate := task.Task{Task: "Buy Milk", Status: "pending"}
+
+		taskToCreate := task.Task{UserID: 1, Task: "Buy Milk", Status: "pending"}
 		require.NoError(t, db.Create(&taskToCreate).Error)
 
 		r := NewTaskRepository(db)
-		err := r.UpdateStatus(taskToCreate.ID, "completed")
+		err := r.UpdateStatus(1, taskToCreate.ID, "completed")
 		assert.NoError(t, err)
 
 		var updated task.Task
@@ -222,7 +223,9 @@ func TestTaskRepository_UpdateStatus(t *testing.T) {
 	t.Run("update status non-existing task", func(t *testing.T) {
 		db := setupTestDB(t)
 		r := NewTaskRepository(db)
-		err := r.UpdateStatus(9999, "completed")
-		assert.NoError(t, err) // GORM does nothing but does not error
+
+		// Non-existing userID + taskID
+		err := r.UpdateStatus(1, 9999, "completed")
+		assert.NoError(t, err) // GORM returns nil error if no rows affected
 	})
 }

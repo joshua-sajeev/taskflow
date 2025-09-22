@@ -364,6 +364,7 @@ func TestTaskHandler_ListTasks(t *testing.T) {
 func TestTaskHandler_UpdateStatus(t *testing.T) {
 	tests := []struct {
 		name           string
+		userID         *int // nil means unauthorized
 		taskID         string
 		requestBody    any
 		setupMock      func() *task_service.TaskServiceMock
@@ -372,13 +373,14 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 	}{
 		{
 			name:   "success case",
+			userID: intPtr(123),
 			taskID: "1",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
 			},
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("UpdateStatus", 1, "completed").Return(nil)
+				mockService.On("UpdateStatus", 123, 1, "completed").Return(nil)
 				return mockService
 			},
 			expectedStatus: http.StatusOK,
@@ -387,7 +389,23 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 			},
 		},
 		{
+			name:   "failure case - unauthorized",
+			userID: nil,
+			taskID: "1",
+			requestBody: dto.UpdateStatusRequest{
+				Status: "completed",
+			},
+			setupMock: func() *task_service.TaskServiceMock {
+				return new(task_service.TaskServiceMock)
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody: common.ErrorResponse{
+				Message: "unauthorized",
+			},
+		},
+		{
 			name:   "failure case - invalid ID",
+			userID: intPtr(123),
 			taskID: "invalid",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
@@ -402,6 +420,7 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:   "failure case - ID less than 1",
+			userID: intPtr(123),
 			taskID: "0",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
@@ -416,6 +435,7 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:        "failure case - invalid JSON",
+			userID:      intPtr(123),
 			taskID:      "1",
 			requestBody: `{"status": }`, // malformed JSON
 			setupMock: func() *task_service.TaskServiceMock {
@@ -428,6 +448,7 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:   "failure case - invalid status",
+			userID: intPtr(123),
 			taskID: "1",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "invalid-status",
@@ -439,13 +460,14 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:   "failure case - task not found",
+			userID: intPtr(123),
 			taskID: "999",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
 			},
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("UpdateStatus", 999, "completed").Return(gorm.ErrRecordNotFound)
+				mockService.On("UpdateStatus", 123, 999, "completed").Return(gorm.ErrRecordNotFound)
 				return mockService
 			},
 			expectedStatus: http.StatusNotFound,
@@ -455,13 +477,14 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:   "failure case - service error",
+			userID: intPtr(123),
 			taskID: "1",
 			requestBody: dto.UpdateStatusRequest{
 				Status: "completed",
 			},
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("UpdateStatus", 1, "completed").Return(errors.New("service error"))
+				mockService.On("UpdateStatus", 123, 1, "completed").Return(errors.New("service error"))
 				return mockService
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -478,6 +501,15 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
+
+			// Middleware to inject userID if set
+			router.Use(func(c *gin.Context) {
+				if tt.userID != nil {
+					c.Set("userID", *tt.userID)
+				}
+				c.Next()
+			})
+
 			router.PATCH("/tasks/:id/status", handler.UpdateStatus)
 
 			var body []byte
@@ -503,7 +535,6 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 				err = json.Unmarshal(w.Body.Bytes(), &responseBody)
 				assert.NoError(t, err)
 
-				// Special handling for validation errors
 				if tt.name == "failure case - invalid status" {
 					errorResp := make(map[string]any)
 					json.Unmarshal(w.Body.Bytes(), &errorResp)
@@ -525,6 +556,10 @@ func TestTaskHandler_UpdateStatus(t *testing.T) {
 	}
 }
 
+func intPtr(i int) *int {
+	return &i
+}
+
 func TestTaskHandler_Delete(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -538,7 +573,8 @@ func TestTaskHandler_Delete(t *testing.T) {
 			taskID: "1",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("Delete", 1).Return(nil)
+				// Expect both userID and taskID
+				mockService.On("Delete", 1, 1).Return(nil)
 				return mockService
 			},
 			expectedStatus: http.StatusOK,
@@ -573,7 +609,7 @@ func TestTaskHandler_Delete(t *testing.T) {
 			taskID: "999",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("Delete", 999).Return(gorm.ErrRecordNotFound)
+				mockService.On("Delete", 1, 999).Return(gorm.ErrRecordNotFound)
 				return mockService
 			},
 			expectedStatus: http.StatusNotFound,
@@ -586,7 +622,7 @@ func TestTaskHandler_Delete(t *testing.T) {
 			taskID: "1",
 			setupMock: func() *task_service.TaskServiceMock {
 				mockService := new(task_service.TaskServiceMock)
-				mockService.On("Delete", 1).Return(errors.New("database error"))
+				mockService.On("Delete", 1, 1).Return(errors.New("database error"))
 				return mockService
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -603,14 +639,21 @@ func TestTaskHandler_Delete(t *testing.T) {
 			handler := NewTaskHandler(mockService, mockAuth)
 
 			router := setupGin()
+			// Middleware to inject fake userID
+			router.Use(func(c *gin.Context) {
+				c.Set("userID", 1)
+				c.Next()
+			})
 			router.DELETE("/tasks/:id", handler.Delete)
 
 			req := httptest.NewRequest(http.MethodDelete, "/tasks/"+tt.taskID, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 
+			// Assert status
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
+			// Assert response body
 			var responseBody any
 			err := json.Unmarshal(w.Body.Bytes(), &responseBody)
 			assert.NoError(t, err)

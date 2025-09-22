@@ -42,10 +42,12 @@ func (r *TaskRepository) Update(t *task.Task) error {
 	return r.db.Save(t).Error
 }
 
-func (r *TaskRepository) Delete(id int) error {
-	return r.db.Delete(&task.Task{}, id).Error
+func (r *TaskRepository) Delete(userID int, id int) error {
+	return r.db.
+		Where("user_id = ?", userID).
+		Delete(&task.Task{}, id).Error
 }
 
-func (r *TaskRepository) UpdateStatus(id int, status string) error {
-	return r.db.Model(&task.Task{}).Where("id = ?", id).Update("status", status).Error
+func (r *TaskRepository) UpdateStatus(userID int, id int, status string) error {
+	return r.db.Model(&task.Task{}).Where("user_id = ? AND id = ?", userID, id).Update("status", status).Error
 }

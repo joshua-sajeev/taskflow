@@ -232,19 +232,22 @@ func TestTaskService_UpdateStatus(t *testing.T) {
 	tests := []struct {
 		name      string
 		setupMock func() *gorm_task.TaskRepoMock
+		userID    int
 		id        int
 		status    string
 		wantErr   bool
 	}{
 		{
 			name:   "success - pending",
+			userID: 123,
 			id:     1,
 			status: "pending",
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
 				mockRepo.On("UpdateStatus",
-					mock.MatchedBy(func(id int) bool { return id > 0 }),
-					mock.MatchedBy(func(status string) bool { return status == "pending" || status == "completed" }),
+					123,
+					1,
+					"pending",
 				).Return(nil)
 				return mockRepo
 			},
@@ -252,20 +255,19 @@ func TestTaskService_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:   "success - completed",
+			userID: 123,
 			id:     2,
 			status: "completed",
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
-				mockRepo.On("UpdateStatus",
-					mock.Anything,
-					mock.Anything,
-				).Return(nil)
+				mockRepo.On("UpdateStatus", 123, 2, "completed").Return(nil)
 				return mockRepo
 			},
 			wantErr: false,
 		},
 		{
 			name:   "failure - invalid status",
+			userID: 123,
 			id:     3,
 			status: "invalid",
 			setupMock: func() *gorm_task.TaskRepoMock {
@@ -275,11 +277,12 @@ func TestTaskService_UpdateStatus(t *testing.T) {
 		},
 		{
 			name:   "failure - repo error",
+			userID: 123,
 			id:     4,
 			status: "pending",
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
-				mockRepo.On("UpdateStatus", mock.Anything, mock.Anything).Return(errors.New("db error"))
+				mockRepo.On("UpdateStatus", 123, 4, "pending").Return(errors.New("db error"))
 				return mockRepo
 			},
 			wantErr: true,
@@ -290,7 +293,8 @@ func TestTaskService_UpdateStatus(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := tt.setupMock()
 			s := NewTaskService(mockRepo)
-			gotErr := s.UpdateStatus(tt.id, tt.status)
+
+			gotErr := s.UpdateStatus(tt.userID, tt.id, tt.status)
 
 			if tt.wantErr {
 				assert.Error(t, gotErr)
@@ -299,10 +303,6 @@ func TestTaskService_UpdateStatus(t *testing.T) {
 			}
 
 			mockRepo.AssertExpectations(t)
-
-			if tt.status == "pending" || tt.status == "completed" {
-				mockRepo.AssertExpectations(t)
-			}
 		})
 	}
 }
@@ -311,51 +311,59 @@ func TestTaskService_Delete(t *testing.T) {
 	tests := []struct {
 		name      string
 		setupMock func() *gorm_task.TaskRepoMock
+		userID    int
 		id        int
 		wantErr   bool
 	}{
 		{
-			name: "success",
-			id:   1,
+			name:   "success",
+			userID: 1,
+			id:     1,
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
-				mockRepo.On("Delete", 1).Return(nil)
+				mockRepo.On("Delete", 1, 1).Return(nil)
 				return mockRepo
 			},
 			wantErr: false,
 		},
-
 		{
-			name: "failure - repo error",
-			id:   2,
+			name:   "failure - repo error",
+			userID: 1,
+			id:     2,
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
-				mockRepo.On("Delete", 2).Return(errors.New("db error"))
+				mockRepo.On("Delete", 1, 2).Return(errors.New("db error"))
 				return mockRepo
 			},
 			wantErr: true,
 		},
-
 		{
-			name: "failure - delete non-existing task",
-			id:   3,
+			name:   "failure - delete non-existing task",
+			userID: 1,
+			id:     3,
 			setupMock: func() *gorm_task.TaskRepoMock {
 				mockRepo := new(gorm_task.TaskRepoMock)
-				mockRepo.On("Delete", 3).Return(errors.New("not found"))
+				mockRepo.On("Delete", 1, 3).Return(errors.New("not found"))
 				return mockRepo
 			},
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := tt.setupMock()
 			s := NewTaskService(mockRepo)
-			err := s.Delete(tt.id)
 
-			assert.Equal(t, tt.wantErr, err != nil, "error mismatch")
+			err := s.Delete(tt.userID, tt.id)
 
-			assert.True(t, mockRepo.AssertExpectations(t))
+			if tt.wantErr {
+				assert.Error(t, err, "expected an error but got nil")
+			} else {
+				assert.NoError(t, err, "expected no error but got one")
+			}
+
+			mockRepo.AssertExpectations(t)
 		})
 	}
 }

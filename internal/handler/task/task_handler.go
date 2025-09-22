@@ -125,6 +125,12 @@ func (h *TaskHandler) ListTasks(c *gin.Context) {
 // @Failure 404 {object} common.ErrorResponse "Task not found"
 // @Router /tasks/{id}/status [patch]
 func (h *TaskHandler) UpdateStatus(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, common.ErrorResponse{Message: "unauthorized"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id < 1 {
 		c.JSON(http.StatusBadRequest, common.ErrorResponse{Message: "invalid task ID"})
@@ -137,7 +143,7 @@ func (h *TaskHandler) UpdateStatus(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.UpdateStatus(id, req.Status); err != nil {
+	if err := h.service.UpdateStatus(userID.(int), id, req.Status); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, common.ErrorResponse{Message: "Task not found"})
 			return
@@ -162,6 +168,12 @@ func (h *TaskHandler) UpdateStatus(c *gin.Context) {
 // @Failure 500 {object} common.ErrorResponse "Internal server error"
 // @Router /tasks/{id} [delete]
 func (h *TaskHandler) Delete(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, common.ErrorResponse{Message: "unauthorized"})
+		return
+	}
+
 	// Parse ID from path
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id < 1 {
@@ -169,7 +181,7 @@ func (h *TaskHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.Delete(id); err != nil {
+	if err := h.service.Delete(userID.(int), id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, common.ErrorResponse{Message: "Task not found"})
 		} else {

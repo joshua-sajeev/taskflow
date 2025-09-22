@@ -76,13 +76,13 @@ func (s *TaskService) ListTasks(userID int) (dto.ListTasksResponse, error) {
 	}, nil
 }
 
-func (s *TaskService) UpdateStatus(id int, status string) error {
+func (s *TaskService) UpdateStatus(userID int, id int, status string) error {
 	if status != "pending" && status != "completed" {
 		return errors.New("invalid status")
 	}
-	return s.repo.UpdateStatus(id, status)
+	return s.repo.UpdateStatus(userID, id, status)
 }
 
-func (s *TaskService) Delete(id int) error {
-	return s.repo.Delete(id)
+func (s *TaskService) Delete(userID int, id int) error {
+	return s.repo.Delete(userID, id)
 }
