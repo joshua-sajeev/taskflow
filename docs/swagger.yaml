@@ -124,8 +124,6 @@ definitions:
         example: "2025-08-27 10:35:16.263"
         type: string
       id:
-        example: 1
-        minimum: 1
         type: integer
       status:
         example: pending
@@ -133,6 +131,8 @@ definitions:
       task:
         example: Buy milk
         type: string
+      user_id:
+        type: integer
     required:
     - status
     - task

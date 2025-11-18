@@ -34,7 +34,7 @@ import (
 func main() {
 	dbuser := pkg.GetEnv("MYSQL_USER", "appuser")
 	pass := pkg.GetEnv("MYSQL_PASSWORD", "apppassword")
-	host := pkg.GetEnv("MYSQL_HOST", "172.18.0.2")
+	host := pkg.GetEnv("MYSQL_HOST", "mysql")
 	port := pkg.GetEnv("MYSQL_PORT", "3306")
 	dbname := pkg.GetEnv("MYSQL_DATABASE", "taskdb")
 

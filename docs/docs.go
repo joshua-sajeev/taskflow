@@ -606,9 +606,7 @@ const docTemplate = `{
                     "example": "2025-08-27 10:35:16.263"
                 },
                 "id": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 1
+                    "type": "integer"
                 },
                 "status": {
                     "type": "string",
@@ -617,6 +615,9 @@ const docTemplate = `{
                 "task": {
                     "type": "string",
                     "example": "Buy milk"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         }

@@ -9,6 +9,7 @@ import (
 	"taskflow/internal/dto"
 	"taskflow/internal/repository/gorm/gorm_user"
 	"taskflow/pkg"
+	"taskflow/pkg/jwt"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -83,7 +84,7 @@ func (s *UserService) AuthenticateUser(req *dto.AuthRequest) (*dto.AuthResponse,
 	}
 
 	secretKey := []byte(pkg.GetEnv("JWT_SECRET", "secret-key"))
-	token, err := pkg.CreateToken(u.ID, u.Email, secretKey)
+	token, err := jwt.CreateToken(u.ID, u.Email, secretKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create token: %w", err)
 	}
