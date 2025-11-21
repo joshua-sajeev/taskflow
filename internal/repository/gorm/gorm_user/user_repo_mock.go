@@ -3,7 +3,6 @@ package gorm_user
 import (
 	"taskflow/internal/domain/user"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -40,9 +39,4 @@ func (m *MockUserRepository) Update(u *user.User) error {
 func (m *MockUserRepository) Delete(id int) error {
 	args := m.Called(id)
 	return args.Error(0)
-}
-
-func setupGinTest() *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	return gin.New()
 }

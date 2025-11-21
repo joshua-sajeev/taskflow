@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"time"
 
 	"taskflow/internal/auth"
 	"taskflow/internal/domain/task"
@@ -15,6 +13,7 @@ import (
 	task_service "taskflow/internal/service/task"
 	user_service "taskflow/internal/service/user"
 	"taskflow/pkg"
+	"taskflow/pkg/database"
 
 	docs "taskflow/docs"
 
@@ -22,8 +21,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 // @title           TaskFlow API
@@ -32,53 +29,18 @@ import (
 // @host            localhost:8080
 // @BasePath        /api
 func main() {
-	dbuser := pkg.GetEnv("MYSQL_USER", "appuser")
-	pass := pkg.GetEnv("MYSQL_PASSWORD", "apppassword")
-	host := pkg.GetEnv("MYSQL_HOST", "mysql")
-	port := pkg.GetEnv("MYSQL_PORT", "3306")
-	dbname := pkg.GetEnv("MYSQL_DATABASE", "taskdb")
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", dbuser, pass, host, port, dbname)
-	log.Printf("Connecting with user %s to %s:%s/%s", dbuser, host, port, dbname)
-
-	var db *gorm.DB
-	var err error
-
-	for range 5 {
-		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
-		if err != nil {
-			log.Println("DB open error:", err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
-		sqlDB, err := db.DB()
-		if err != nil {
-			log.Println("Failed to get sql.DB from GORM:", err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
-		err = sqlDB.Ping()
-		if err == nil {
-			log.Println("Database connected successfully")
-			break
-		}
-
-		log.Println("Waiting for DB:", err)
-		time.Sleep(5 * time.Second)
-	}
-
+	cfg := database.LoadConfigFromEnv()
+	db, err := database.ConnectDB(cfg)
 	if err != nil {
-		log.Fatalf("Database connection failed after retries: %v", err)
+		log.Fatal(err)
 	}
 
+	if err := database.MigrateModels(db, &user.User{}, &task.Task{}); err != nil {
+		log.Fatal(err)
+	}
 	sqlDB, _ := db.DB()
 	defer sqlDB.Close()
-
-	if err := db.AutoMigrate(&user.User{}, &task.Task{}); err != nil {
-		log.Fatalf("AutoMigrate failed: %v", err)
-	}
 
 	secretKey := []byte(pkg.GetEnv("JWT_SECRET", "secret-key"))
 	// Dependency wiring
