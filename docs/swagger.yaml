@@ -8,8 +8,10 @@ definitions:
   dto.AuthRequest:
     properties:
       email:
+        example: joshua@example.com
         type: string
       password:
+        example: strongpassword123
         type: string
     required:
     - email
@@ -18,10 +20,13 @@ definitions:
   dto.AuthResponse:
     properties:
       email:
+        example: joshua@example.com
         type: string
       id:
+        example: 1
         type: integer
       token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
     type: object
   dto.CreateTaskRequest:
@@ -36,8 +41,10 @@ definitions:
   dto.CreateUserRequest:
     properties:
       email:
+        example: joshua@example.com
         type: string
       password:
+        example: strongpassword123
         minLength: 6
         type: string
     required:
@@ -47,8 +54,10 @@ definitions:
   dto.CreateUserResponse:
     properties:
       email:
+        example: joshua@example.com
         type: string
       id:
+        example: 1
         type: integer
     type: object
   dto.DeleteTaskResponse:
@@ -60,6 +69,7 @@ definitions:
   dto.DeleteUserResponse:
     properties:
       message:
+        example: User deleted successfully
         type: string
     type: object
   dto.GetTaskResponse:
@@ -84,11 +94,14 @@ definitions:
   dto.UpdatePasswordRequest:
     properties:
       id:
+        example: 1
         type: integer
       new_password:
+        example: newsecurepassword456
         minLength: 6
         type: string
       old_password:
+        example: oldpassword123
         type: string
     required:
     - id
@@ -98,6 +111,7 @@ definitions:
   dto.UpdatePasswordResponse:
     properties:
       message:
+        example: Password updated successfully
         type: string
     type: object
   dto.UpdateStatusRequest:
@@ -124,8 +138,6 @@ definitions:
         example: "2025-08-27 10:35:16.263"
         type: string
       id:
-        example: 1
-        minimum: 1
         type: integer
       status:
         example: pending
@@ -133,6 +145,8 @@ definitions:
       task:
         example: Buy milk
         type: string
+      user_id:
+        type: integer
     required:
     - status
     - task

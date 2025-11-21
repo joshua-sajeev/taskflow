@@ -7,7 +7,7 @@ import (
 	"strings"
 	"taskflow/internal/common"
 	"taskflow/internal/repository/gorm/gorm_user"
-	"taskflow/pkg"
+	"taskflow/pkg/jwt"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -48,7 +48,7 @@ func (ua *UserAuth) AuthMiddleware() gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		claims, err := pkg.ValidateToken(tokenString, secretKey)
+		claims, err := jwt.ValidateToken(tokenString, secretKey)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, common.ErrorResponse{
 				Message: "invalid or expired token",
@@ -123,7 +123,7 @@ func (ua *UserAuth) OptionalAuthMiddleware() gin.HandlerFunc {
 		}
 
 		tokenString := parts[1]
-		claims, err := pkg.ValidateToken(tokenString, secretKey)
+		claims, err := jwt.ValidateToken(tokenString, secretKey)
 		if err != nil {
 			c.Next()
 			return

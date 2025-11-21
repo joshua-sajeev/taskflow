@@ -428,10 +428,12 @@
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "joshua@example.com"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "strongpassword123"
                 }
             }
         },
@@ -439,13 +441,16 @@
             "type": "object",
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "joshua@example.com"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "token": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                 }
             }
         },
@@ -470,11 +475,13 @@
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "joshua@example.com"
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 6
+                    "minLength": 6,
+                    "example": "strongpassword123"
                 }
             }
         },
@@ -482,10 +489,12 @@
             "type": "object",
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "joshua@example.com"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -502,7 +511,8 @@
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "User deleted successfully"
                 }
             }
         },
@@ -543,14 +553,17 @@
             ],
             "properties": {
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "new_password": {
                     "type": "string",
-                    "minLength": 6
+                    "minLength": 6,
+                    "example": "newsecurepassword456"
                 },
                 "old_password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "oldpassword123"
                 }
             }
         },
@@ -558,7 +571,8 @@
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Password updated successfully"
                 }
             }
         },
@@ -600,9 +614,7 @@
                     "example": "2025-08-27 10:35:16.263"
                 },
                 "id": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 1
+                    "type": "integer"
                 },
                 "status": {
                     "type": "string",
@@ -611,6 +623,9 @@
                 "task": {
                     "type": "string",
                     "example": "Buy milk"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         }

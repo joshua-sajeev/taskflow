@@ -434,10 +434,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john@example.com"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "strongpassword123"
                 }
             }
         },
@@ -445,13 +447,16 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john@example.com"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "token": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                 }
             }
         },
@@ -476,11 +481,13 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john@example.com"
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 6
+                    "minLength": 6,
+                    "example": "strongpassword123"
                 }
             }
         },
@@ -488,10 +495,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john@example.com"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -508,7 +517,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "User deleted successfully"
                 }
             }
         },
@@ -549,14 +559,17 @@ const docTemplate = `{
             ],
             "properties": {
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "new_password": {
                     "type": "string",
-                    "minLength": 6
+                    "minLength": 6,
+                    "example": "newsecurepassword456"
                 },
                 "old_password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "oldpassword123"
                 }
             }
         },
@@ -564,7 +577,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Password updated successfully"
                 }
             }
         },
@@ -606,9 +620,7 @@ const docTemplate = `{
                     "example": "2025-08-27 10:35:16.263"
                 },
                 "id": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 1
+                    "type": "integer"
                 },
                 "status": {
                     "type": "string",
@@ -617,6 +629,9 @@ const docTemplate = `{
                 "task": {
                     "type": "string",
                     "example": "Buy milk"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         }

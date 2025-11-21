@@ -8,7 +8,7 @@ import (
 	"taskflow/internal/common"
 	"taskflow/internal/domain/user"
 	"taskflow/internal/repository/gorm/gorm_user"
-	"taskflow/pkg"
+	"taskflow/pkg/jwt"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -25,11 +25,11 @@ func TestEnhancedAuthMiddleware_UserValidation(t *testing.T) {
 	secretKey := []byte("test-secret")
 
 	// Create a valid token for user ID 1
-	validToken, err := pkg.CreateToken(1, "test@example.com", secretKey)
+	validToken, err := jwt.CreateToken(1, "test@example.com", secretKey)
 	assert.NoError(t, err)
 
 	// Create a valid token for user ID 999 (non-existent user)
-	deletedUserToken, err := pkg.CreateToken(999, "deleted@example.com", secretKey)
+	deletedUserToken, err := jwt.CreateToken(999, "deleted@example.com", secretKey)
 	assert.NoError(t, err)
 
 	tests := []struct {
@@ -151,10 +151,10 @@ func TestEnhancedOptionalAuthMiddleware_UserValidation(t *testing.T) {
 	secretKey := []byte("test-secret")
 
 	// Create tokens
-	validToken, err := pkg.CreateToken(1, "test@example.com", secretKey)
+	validToken, err := jwt.CreateToken(1, "test@example.com", secretKey)
 	assert.NoError(t, err)
 
-	deletedUserToken, err := pkg.CreateToken(999, "deleted@example.com", secretKey)
+	deletedUserToken, err := jwt.CreateToken(999, "deleted@example.com", secretKey)
 	assert.NoError(t, err)
 
 	tests := []struct {
@@ -250,7 +250,7 @@ func TestSecurityScenario_DeletedUserCannotAccess(t *testing.T) {
 	secretKey := []byte("test-secret")
 
 	// Create a token for user ID 1
-	userToken, err := pkg.CreateToken(1, "user@example.com", secretKey)
+	userToken, err := jwt.CreateToken(1, "user@example.com", secretKey)
 	assert.NoError(t, err)
 
 	// Setup mock repository to simulate deleted user
