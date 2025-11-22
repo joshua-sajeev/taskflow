@@ -37,26 +37,13 @@ graph TB
     R --> MW
     MW --> UH
     MW --> TH
-    
     UH --> US
     TH --> TS
-    
     US --> UR
     TS --> TR
-    
     UR --> DB
     TR --> DB
-    
-    style Client fill:#e3f2fd
-    style Router fill:#fff3e0
-    style MW fill:#f3e5f5
-    style Handlers fill:#e8f5e9
-    style Services fill:#fce4ec
-    style Repos fill:#f1f8e9
-    style DB fill:#ffebee
 ```
-
----
 
 ## Project Structure
 
