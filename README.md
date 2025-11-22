@@ -61,10 +61,7 @@ The API will be available at `http://localhost:8080`.
 ### Verify it works
 
 Visit the Swagger UI to interact with the API:
-**[http://localhost:8080/swagger/](https://www.google.com/search?q=http://localhost:8080/swagger/)**
-
------
-
+**[http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)**
 ## Tech Stack
 
 | Category      | Technology      | Usage                      |
