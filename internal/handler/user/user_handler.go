@@ -33,6 +33,7 @@ var _ UserHandlerInterface = (*UserHandler)(nil)
 // @Success 201 {object} dto.CreateUserResponse
 // @Failure 400 {object} common.ErrorResponse
 // @Failure 409 {object} common.ErrorResponse "Email already exists"
+// @Failure 429 {object} common.ErrorResponse "Rate limit exceeded"
 // @Router /auth/register [post]
 func (h *UserHandler) Register(c *gin.Context) {
 	var req dto.CreateUserRequest
@@ -64,6 +65,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 // @Success 200 {object} dto.AuthResponse
 // @Failure 400 {object} common.ErrorResponse
 // @Failure 401 {object} common.ErrorResponse "Invalid credentials"
+// @Failure 429 {object} common.ErrorResponse "Rate limit exceeded"
 // @Router /auth/login [post]
 func (h *UserHandler) Login(c *gin.Context) {
 	var req dto.AuthRequest
