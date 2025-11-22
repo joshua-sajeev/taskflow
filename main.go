@@ -2,12 +2,14 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"taskflow/internal/auth"
 	"taskflow/internal/domain/task"
 	"taskflow/internal/domain/user"
 	task_handler "taskflow/internal/handler/task"
 	user_handler "taskflow/internal/handler/user"
+	"taskflow/internal/middleware/ratelimiter"
 	"taskflow/internal/repository/gorm/gorm_task"
 	"taskflow/internal/repository/gorm/gorm_user"
 	task_service "taskflow/internal/service/task"
@@ -21,6 +23,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"golang.org/x/time/rate"
 )
 
 // @title           TaskFlow API
@@ -54,6 +57,12 @@ func main() {
 	taskHandler := task_handler.NewTaskHandler(taskSvc, userAuth)
 	userHandler := user_handler.NewUserHandler(userSvc, userAuth)
 
+	// Rate limiter setup for auth endpoints
+	// Allows 5 requests per second with a burst of 10 requests
+	authRateLimiter := ratelimiter.NewIPRateLimiter(rate.Limit(5), 10)
+	// Clean up old IP entries every hour to prevent memory leaks
+	authRateLimiter.StartCleanupRoutine(1 * time.Hour)
+
 	// Router setup
 	r := gin.Default()
 	docs.SwaggerInfo.BasePath = "/api"
@@ -62,8 +71,13 @@ func main() {
 
 	api := r.Group("/api")
 	{
-		api.POST("/auth/register", userHandler.Register)
-		api.POST("/auth/login", userHandler.Login)
+		// Auth routes with rate limiting
+		authRoutes := api.Group("/auth")
+		authRoutes.Use(authRateLimiter.Middleware())
+		{
+			authRoutes.POST("/register", userHandler.Register)
+			authRoutes.POST("/login", userHandler.Login)
+		}
 
 		taskRoutes := api.Group("/tasks")
 		taskRoutes.Use(userAuth.AuthMiddleware())
