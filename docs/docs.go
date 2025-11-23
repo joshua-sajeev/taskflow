@@ -57,6 +57,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/common.ErrorResponse"
                         }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "schema": {
+                            "$ref": "#/definitions/common.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -100,6 +106,12 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Email already exists",
+                        "schema": {
+                            "$ref": "#/definitions/common.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
                         "schema": {
                             "$ref": "#/definitions/common.ErrorResponse"
                         }

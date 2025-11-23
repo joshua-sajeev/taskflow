@@ -51,6 +51,12 @@
                         "schema": {
                             "$ref": "#/definitions/common.ErrorResponse"
                         }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "schema": {
+                            "$ref": "#/definitions/common.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -94,6 +100,12 @@
                     },
                     "409": {
                         "description": "Email already exists",
+                        "schema": {
+                            "$ref": "#/definitions/common.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
                         "schema": {
                             "$ref": "#/definitions/common.ErrorResponse"
                         }
@@ -429,7 +441,7 @@
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "joshua@example.com"
+                    "example": "john@example.com"
                 },
                 "password": {
                     "type": "string",
@@ -442,7 +454,7 @@
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "joshua@example.com"
+                    "example": "john@example.com"
                 },
                 "id": {
                     "type": "integer",
@@ -476,7 +488,7 @@
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "joshua@example.com"
+                    "example": "john@example.com"
                 },
                 "password": {
                     "type": "string",
@@ -490,7 +502,7 @@
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "joshua@example.com"
+                    "example": "john@example.com"
                 },
                 "id": {
                     "type": "integer",
