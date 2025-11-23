@@ -174,7 +174,7 @@ func TestMiddleware_RateLimitResponse(t *testing.T) {
 	var response map[string]string
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
-	assert.Equal(t, "rate limit exceeded, please try again later", response["message"])
+	assert.Equal(t, "rate limit exceeded, please try again later", response["error"])
 }
 
 func TestCleanupOldEntries(t *testing.T) {
@@ -210,4 +210,3 @@ func TestStartCleanupRoutine(t *testing.T) {
 	// IPs should be cleaned up
 	assert.Equal(t, 0, len(limiter.ips))
 }
-
