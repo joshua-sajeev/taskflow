@@ -1,115 +1,81 @@
-# TaskFlow
+# TaskFlow - Learning Go, Docker & Clean Architecture
 
-A REST API for task management built with Go, following clean architecture principles.
+> A production-grade REST API built to master Go, Docker, and modern backend development practices.
 
-## What I've Built
+[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/Tests-Passing-success)](./test)
 
-### 📋 Core Features
-- **Task Management**: Create, read, update, delete tasks
-- **Status Updates**: Change task status (pending → in-progress → completed)
-- **Clean Architecture**: Separated layers (handler → service → repository → database)
-- **JWT Authentication**: Complete JWT utility package with token creation/validation
+TaskFlow is a robust task management API designed to demonstrate **Clean Architecture** principles in Go. It features secure authentication, containerized environments, and a comprehensive testing suite.
 
-### 🏗️ Architecture Implementation
-```
-internal/
-├── domain/task/        # Task entity and repository interface
-├── dto/               # Request/response data structures  
-├── handler/           # HTTP handlers with comprehensive tests
-├── service/           # Business logic layer
-├── repository/gorm/   # Database layer with GORM
-└── common/           # Shared error responses
-
-pkg/
-└── jwt.go            # JWT utilities (create, validate, extract username)
-```
-
-### 🧪 Testing Coverage
-- **Handler Tests**: All HTTP endpoints with success/failure scenarios
-- **Service Tests**: Business logic validation with mocks
-- **Repository Tests**: Database operations with in-memory SQLite
-- **JWT Tests**: Token creation, validation, and error handling
-- **Race Detection**: `go test -race` ready
-
-### 🐳 Docker Setup
-- **Development**: Hot reload with Air, volume mounting for live coding
-- **Production**: Multi-stage Alpine build for optimized images
-- **Database**: MySQL 8.0 with health checks and proper networking
-- **Docker Compose**: Separate configs for dev/prod environments
-
-### 📊 API Endpoints Built
-| Method | Endpoint | Status |
-|--------|----------|--------|
-| `POST` | `/api/tasks` | ✅ Complete |
-| `GET` | `/api/tasks` | ✅ Complete |
-| `GET` | `/api/tasks/:id` | ✅ Complete |
-| `PATCH` | `/api/tasks/:id/status` | ✅ Complete |
-| `DELETE` | `/api/tasks/:id` | ✅ Complete |
-
-### 🔐 JWT Implementation
-- Token creation with configurable expiration
-- Token validation with proper error handling
-- Username extraction from tokens
-- Comprehensive test coverage
-- Ready for authentication middleware integration
-
-## Tech Stack
-- **Go** with Gin framework
-- **MySQL** with GORM ORM
-- **Docker** & Docker Compose
-- **Testify** for testing
-- **Swagger** documentation (integrated)
-
-## Quick Start
-
-1. **Clone and setup**:
-```bash
-git clone <repo>
-cd taskflow
-```
-
-2. **Create `.env` file**:
-```env
-MYSQL_ROOT_PASSWORD=root
-MYSQL_DATABASE=taskdb
-MYSQL_USER=appuser
-MYSQL_PASSWORD=apppassword
-```
-
-3. **Run with Docker**:
-```bash
-# Development with hot reload
-docker-compose -f docker-compose.yml -f docker-compose.override.yml up
-
-# Production
-docker-compose up
-```
-
-4. **Access**: 
-   - API: http://localhost:8080/api
-   - Swagger: http://localhost:8080/swagger/
-
-## Testing
-
-```bash
-# All tests
-go test ./...
-
-# With race detection  
-go test -race ./...
-
-# With coverage
-go test -cover ./...
-```
-
-## What's Next
-Planning to transform this into a **concurrent, high-performance system** with:
-- Redis integration for caching/sessions
-- Worker pools for parallel processing  
-- WebSocket real-time updates
-- Event-driven architecture
-- User authentication system
+**This is a learning project.** It documents my journey from "Hello World" to a production-ready backend structure.
 
 ---
 
-*Built with Go clean architecture principles and comprehensive testing*
+## Key Features
+
+* **Clean Architecture:** Strict separation of concerns (Handlers → Services → Repositories).
+* **Secure Auth:** JWT implementation with Bcrypt password hashing.
+* **Containerization:** Optimized Multi-stage Docker builds for Dev and Prod.
+* **Quality Assurance:** Unit & Integration tests with high coverage + Race detection.
+* **Developer Experience:** Hot-reloading (Air), Swagger docs
+
+---
+
+## Documentation
+
+I have documented the technical details and my learning process in the `docs/` folder:
+
+* **[Architecture & Design](./docs/ARCHITECTURE.md)** - Breakdowns of the Clean Architecture layers and folder structure.
+* **[API Reference](./docs/API.md)** - Endpoints, Request/Response examples, and Auth flow diagrams.
+* **[Development Guide](./docs/DEVELOPMENT.md)** - Setup instructions, testing commands, and troubleshooting.
+* **[What I Learned](./docs/LEARNING.md)** - A log of challenges faced and concepts mastered (Go routines, Interfaces, Docker networking).
+
+---
+
+## Quick Start
+
+The easiest way to run the project is with Docker Compose.
+
+### Prerequisites
+* Docker & Docker Compose
+
+### Run with One Command
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/joshua-sajeev/taskflow.git
+cd taskflow
+
+# 2. Setup Environment (Important!)
+cp .env.example .env
+# Open .env and set a secure JWT_SECRET
+
+# 3. Start the App
+docker-compose up --build
+````
+
+The API will be available at `http://localhost:8080`.
+
+### Verify it works
+
+Visit the Swagger UI to interact with the API:
+**[http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)**
+## Tech Stack
+
+| Category      | Technology      | Usage                      |
+| :------------ | :-------------- | :------------------------- |
+| **Language**  | **Go (Golang)** | Core logic                 |
+| **Framework** | **Gin**         | HTTP Routing & Middleware  |
+| **Database**  | **MySQL 8.0**   | Persistent storage         |
+| **ORM**       | **GORM**        | Data access & Migrations   |
+| **DevOps**    | **Docker**      | Containerization & Compose |
+| **Testing**   | **Testify**     | Assertions & Mocks         |
+| **Docs**      | **Swagger**     | API Documentation          |
+
+-----
+
+## Contributing & Feedback
+
+This project is open for code review\! If you see a non-idiomatic Go pattern or a security flaw, please open an issue.

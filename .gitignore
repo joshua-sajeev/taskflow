@@ -1,3 +1,4 @@
 .env
 internal/db/.env
 tmp/
+.obsidian/
