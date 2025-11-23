@@ -45,7 +45,7 @@ func main() {
 	sqlDB, _ := db.DB()
 	defer sqlDB.Close()
 
-	secretKey := []byte(pkg.GetEnv("JWT_SECRET", "secret-key"))
+	secretKey := []byte(pkg.GetEnv("JWT_SECRET", ""))
 	// Dependency wiring
 	taskRepo := gorm_task.NewTaskRepository(db)
 	taskSvc := task_service.NewTaskService(taskRepo)
