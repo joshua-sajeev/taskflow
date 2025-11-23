@@ -89,15 +89,16 @@ func TestMiddleware_RateLimitsRequests(t *testing.T) {
 	rateLimitedCount := 0
 
 	// Make 5 rapid requests
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/test", nil)
 		req.RemoteAddr = "192.168.1.1:1234" // Same IP for all requests
 		r.ServeHTTP(w, req)
 
-		if w.Code == http.StatusOK {
+		switch w.Code {
+		case http.StatusOK:
 			successCount++
-		} else if w.Code == http.StatusTooManyRequests {
+		case http.StatusTooManyRequests:
 			rateLimitedCount++
 		}
 	}
@@ -125,7 +126,7 @@ func TestMiddleware_DifferentIPs(t *testing.T) {
 
 	for _, ip := range ips {
 		// Each IP should get 2 successful requests (burst)
-		for i := 0; i < 2; i++ {
+		for range 2 {
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest("GET", "/test", nil)
 			req.RemoteAddr = ip
