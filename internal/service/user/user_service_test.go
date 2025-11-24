@@ -28,6 +28,12 @@ func TestCreateUser(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:      "weak password",
+			req:       &dto.CreateUserRequest{Email: "dup@example.com", Password: "12345678"},
+			mockSetup: nil,
+			wantErr:   true,
+		},
+		{
 			name: "duplicate email",
 			req:  &dto.CreateUserRequest{Email: "dup@example.com", Password: "secret123"},
 			mockSetup: func(m *gorm_user.MockUserRepository) {
@@ -139,13 +145,20 @@ func TestUpdatePassword(t *testing.T) {
 			req: &dto.UpdatePasswordRequest{
 				ID:          2,
 				OldPassword: "wrongpass",
-				NewPassword: "newpass",
+				NewPassword: "newstrongpassword",
 			},
 			mockSetup: func(m *gorm_user.MockUserRepository) {
 				u := &user.User{ID: 2, Email: "y@example.com", Password: oldHash}
 				m.On("GetByID", 2).Return(u, nil).Once()
 			},
 			wantErr: true,
+		},
+
+		{
+			name:      "weak new password",
+			req:       &dto.UpdatePasswordRequest{OldPassword: "someoldpassword", NewPassword: "12345678"},
+			mockSetup: nil,
+			wantErr:   true,
 		},
 	}
 
