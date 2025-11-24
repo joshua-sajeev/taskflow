@@ -10,7 +10,7 @@ import (
 type User struct {
 	ID        int            `gorm:"primaryKey" json:"id"`
 	Email     string         `gorm:"uniqueIndex;size:255;not null" json:"email"`
-	Password  string         `gorm:"size:255;not null" json:"password,omitempty"`
+	Password  string         `gorm:"size:255;not null" json:"-"`
 	Tasks     []task.Task    `json:"tasks" gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`

@@ -10,6 +10,7 @@ import (
 	"taskflow/internal/repository/gorm/gorm_user"
 	"taskflow/pkg"
 	"taskflow/pkg/jwt"
+	"taskflow/pkg/validator"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -32,8 +33,10 @@ func (s *UserService) CreateUser(req *dto.CreateUserRequest) (*dto.CreateUserRes
 	if req.Password == "" {
 		return nil, errors.New("password is required")
 	}
-	if len(req.Password) < 6 {
-		return nil, errors.New("password must be at least 6 characters")
+
+	validator := validator.NewPasswordValidator()
+	if err := validator.Validate(req.Password); err != nil {
+		return nil, errors.New("password validation failed, choose a stronger password")
 	}
 
 	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
@@ -103,8 +106,10 @@ func (s *UserService) UpdatePassword(req *dto.UpdatePasswordRequest) (*dto.Updat
 	if req.NewPassword == "" {
 		return nil, errors.New("new password is required")
 	}
-	if len(req.NewPassword) < 6 {
-		return nil, errors.New("new password must be at least 6 characters")
+
+	validator := validator.NewPasswordValidator()
+	if err := validator.Validate(req.NewPassword); err != nil {
+		return nil, errors.New("password validation failed, choose a stronger password")
 	}
 
 	u, err := s.repo.GetByID(req.ID)

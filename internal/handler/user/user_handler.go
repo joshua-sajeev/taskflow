@@ -38,6 +38,14 @@ var _ UserHandlerInterface = (*UserHandler)(nil)
 func (h *UserHandler) Register(c *gin.Context) {
 	var req dto.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+
+		if err.Error() == "EOF" {
+			c.JSON(http.StatusBadRequest, common.ErrorResponse{
+				Message: "Request body cannot be empty",
+			})
+			return
+		}
+
 		c.JSON(http.StatusBadRequest, common.ErrorResponse{Message: err.Error()})
 		return
 	}
@@ -70,6 +78,14 @@ func (h *UserHandler) Register(c *gin.Context) {
 func (h *UserHandler) Login(c *gin.Context) {
 	var req dto.AuthRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+
+		if err.Error() == "EOF" {
+			c.JSON(http.StatusBadRequest, common.ErrorResponse{
+				Message: "Request body cannot be empty",
+			})
+			return
+		}
+
 		c.JSON(http.StatusBadRequest, common.ErrorResponse{Message: err.Error()})
 		return
 	}
@@ -103,6 +119,14 @@ func (h *UserHandler) Login(c *gin.Context) {
 func (h *UserHandler) UpdatePassword(c *gin.Context) {
 	var req dto.UpdatePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+
+		if err.Error() == "EOF" {
+			c.JSON(http.StatusBadRequest, common.ErrorResponse{
+				Message: "Request body cannot be empty",
+			})
+			return
+		}
+
 		c.JSON(http.StatusBadRequest, common.ErrorResponse{Message: err.Error()})
 		return
 	}

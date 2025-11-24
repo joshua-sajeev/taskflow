@@ -15,8 +15,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-// TODO:
-// var _ UserRepositoryInterface = (*UserRepository)(nil)
+var _ UserRepositoryInterface = (*UserRepository)(nil)
 
 func (r *UserRepository) Create(u *user.User) error {
 	return r.db.Create(u).Error

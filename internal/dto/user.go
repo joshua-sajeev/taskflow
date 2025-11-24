@@ -2,7 +2,7 @@ package dto
 
 type CreateUserRequest struct {
 	Email    string `json:"email" binding:"required,email" example:"john@example.com"`
-	Password string `json:"password" binding:"required,min=6" example:"strongpassword123"`
+	Password string `json:"password" binding:"required,min=8,max=128" example:"strongpassword123"`
 }
 
 type CreateUserResponse struct {
@@ -12,7 +12,7 @@ type CreateUserResponse struct {
 
 type AuthRequest struct {
 	Email    string `json:"email" binding:"required,email" example:"john@example.com"`
-	Password string `json:"password" binding:"required" example:"strongpassword123"`
+	Password string `json:"password" binding:"required,min=6" example:"strongpassword123"`
 }
 
 type AuthResponse struct {
@@ -31,8 +31,8 @@ type DeleteUserResponse struct {
 
 type UpdatePasswordRequest struct {
 	ID          int    `json:"id" binding:"required" example:"1"`
-	OldPassword string `json:"old_password" binding:"required" example:"oldpassword123"`
-	NewPassword string `json:"new_password" binding:"required,min=6" example:"newsecurepassword456"`
+	OldPassword string `json:"old_password" binding:"required,min=8,max=128" example:"oldpassword123"`
+	NewPassword string `json:"new_password" binding:"required,min=8,max=128" example:"newsecurepassword456"`
 }
 
 type UpdatePasswordResponse struct {
