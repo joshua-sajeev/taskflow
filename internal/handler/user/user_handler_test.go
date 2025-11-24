@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"taskflow/internal/auth"
 	"taskflow/internal/common"
 	"taskflow/internal/dto"
 	user_service "taskflow/internal/service/user"
@@ -75,6 +76,15 @@ func TestUserHandler_Register(t *testing.T) {
 				Message: "invalid character '}' looking for beginning of value",
 			},
 		},
+		{
+			name:           "failure case - empty body",
+			requestBody:    ``,
+			setupMock:      func() *user_service.UserServiceMock { return new(user_service.UserServiceMock) },
+			expectedStatus: http.StatusBadRequest,
+			expectedBody: common.ErrorResponse{
+				Message: "Request body cannot be empty",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -111,6 +121,25 @@ func TestUserHandler_Register(t *testing.T) {
 
 			assert.Equal(t, expectedResponse, responseBody)
 			mockSvc.AssertExpectations(t)
+		})
+	}
+}
+
+func TestUserHandler_Login(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for receiver constructor.
+		s  user_service.UserServiceInterface
+		ua auth.UserAuthInterface
+		// Named input parameters for target function.
+		c *gin.Context
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := NewUserHandler(tt.s, tt.ua)
+			h.Login(tt.c)
 		})
 	}
 }
