@@ -18,7 +18,7 @@ var (
 )
 
 const (
-	TokenExpiration    = 24 * time.Hour
+	TokenExpiration    = 30 * time.Minute
 	UserIDClaimKey     = "user_id"
 	ExpirationClaimKey = "exp"
 )
