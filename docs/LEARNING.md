@@ -1,4 +1,4 @@
-## Date: 2025-11-14
+## Date: 2025-11-24
 ### Password Validation
 
 [OWASP](https://owasp.org/) no longer recommends strict composition rules like:
@@ -9,3 +9,17 @@
 Why?
 
 Because composition rules do NOT significantly improve security and they make passwords harder for users to remember!
+
+
+## Date: 2025-11-25
+```go 
+value := x.(string)
+```
+
+This tells go that we expect x to be a string. 
+
+```go
+str, ok := x.(string)
+```
+
+For failure case we can make use of two variables.

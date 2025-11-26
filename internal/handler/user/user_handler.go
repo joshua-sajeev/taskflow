@@ -137,7 +137,14 @@ func (h *UserHandler) UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	req.ID = userID.(int)
+	val, ok := userID.(int)
+	if !ok {
+		c.JSON(http.StatusBadRequest, common.ErrorResponse{
+			Message: "invalid userID in context",
+		})
+		return
+	}
+	req.ID = val
 
 	resp, err := h.service.UpdatePassword(&req)
 	if err != nil {
@@ -174,7 +181,17 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	req := dto.DeleteUserRequest{ID: userID.(int)}
+	val, ok := userID.(int)
+	if !ok {
+		c.JSON(http.StatusBadRequest, common.ErrorResponse{
+			Message: "invalid userID in context",
+		})
+		return
+	}
+
+	req := dto.DeleteUserRequest{
+		ID: val,
+	}
 
 	resp, err := h.service.DeleteUser(&req)
 	if err != nil {

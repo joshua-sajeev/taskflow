@@ -97,6 +97,34 @@ func main() {
 		}
 	}
 
+	public := r.Group("/")
+	{
+		// Auth routes with rate limiting
+		authRoutes := public.Group("/auth")
+		authRoutes.Use(authRateLimiter.Middleware())
+		{
+			authRoutes.POST("/register", userHandler.Register)
+			authRoutes.POST("/login", userHandler.Login)
+		}
+
+		taskRoutes := public.Group("/tasks")
+		taskRoutes.Use(userAuth.AuthMiddleware())
+		{
+			taskRoutes.POST("", taskHandler.CreateTask)
+			taskRoutes.GET("/:id", taskHandler.GetTask)
+			taskRoutes.GET("", taskHandler.ListTasks)
+			taskRoutes.PATCH("/:id/status", taskHandler.UpdateStatus)
+			taskRoutes.DELETE("/:id", taskHandler.Delete)
+		}
+
+		userRoutes := public.Group("/users")
+		userRoutes.Use(userAuth.AuthMiddleware())
+		{
+			userRoutes.PATCH("/password", userHandler.UpdatePassword)
+			userRoutes.DELETE("/account", userHandler.DeleteUser)
+		}
+	}
+
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	log.Println("Routes registered: /auth, /tasks (protected), /users (protected)")
