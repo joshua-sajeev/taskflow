@@ -65,12 +65,6 @@ func (s *UserService) CreateUser(req *dto.CreateUserRequest) (*dto.CreateUserRes
 }
 
 func (s *UserService) AuthenticateUser(req *dto.AuthRequest) (*dto.AuthResponse, error) {
-	if req.Email == "" {
-		return nil, errors.New("email is required")
-	}
-	if req.Password == "" {
-		return nil, errors.New("password is required")
-	}
 
 	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 
@@ -100,12 +94,6 @@ func (s *UserService) AuthenticateUser(req *dto.AuthRequest) (*dto.AuthResponse,
 }
 
 func (s *UserService) UpdatePassword(req *dto.UpdatePasswordRequest) (*dto.UpdatePasswordResponse, error) {
-	if req.OldPassword == "" {
-		return nil, errors.New("old password is required")
-	}
-	if req.NewPassword == "" {
-		return nil, errors.New("new password is required")
-	}
 
 	validator := validator.NewPasswordValidator()
 	if err := validator.Validate(req.NewPassword); err != nil {
