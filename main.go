@@ -50,7 +50,7 @@ func main() {
 	taskRepo := gorm_task.NewTaskRepository(db)
 	taskSvc := task_service.NewTaskService(taskRepo)
 	userRepo := gorm_user.NewUserRepository(db)
-	userSvc := user_service.NewUserService(userRepo)
+	userSvc := user_service.NewUserService(userRepo, string(secretKey))
 
 	userAuth := auth.NewUserAuth(string(secretKey), userRepo)
 
