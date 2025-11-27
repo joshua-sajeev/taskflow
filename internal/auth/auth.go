@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"strings"
@@ -158,8 +157,4 @@ func (ua *UserAuth) OptionalAuthMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
-}
-
-func SetUserID(ctx context.Context, userID int) context.Context {
-	return context.WithValue(ctx, "userID", userID)
 }

@@ -108,7 +108,7 @@ func main() {
 		}
 
 		taskRoutes := public.Group("/tasks")
-		taskRoutes.Use(userAuth.AuthMiddleware())
+		taskRoutes.Use(userAuth.OptionalAuthMiddleware())
 		{
 			taskRoutes.POST("", taskHandler.CreateTask)
 			taskRoutes.GET("/:id", taskHandler.GetTask)
@@ -118,7 +118,7 @@ func main() {
 		}
 
 		userRoutes := public.Group("/users")
-		userRoutes.Use(userAuth.AuthMiddleware())
+		userRoutes.Use(userAuth.OptionalAuthMiddleware())
 		{
 			userRoutes.PATCH("/password", userHandler.UpdatePassword)
 			userRoutes.DELETE("/account", userHandler.DeleteUser)
