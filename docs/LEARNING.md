@@ -23,3 +23,11 @@ str, ok := x.(string)
 ```
 
 For failure case we can make use of two variables.
+
+### Key Concepts Mastered
+- **Clean Architecture**: Separation of handlers → services → repositories
+- **Dependency Injection**: Interface-based design for testability
+- **JWT Authentication**: Token-based auth with middleware
+- **Docker Multi-stage Builds**: Production vs development environments
+- **Testing Strategy**: Unit tests with mocks, integration tests with dockertest
+- **Database Design**: GORM with soft deletes, migrations, foreign keys
