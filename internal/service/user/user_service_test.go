@@ -46,7 +46,8 @@ func TestCreateUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(gorm_user.MockUserRepository)
-			svc := NewUserService(mockRepo)
+			secretKey := []byte("secret")
+			svc := NewUserService(mockRepo, string(secretKey))
 
 			if tt.mockSetup != nil {
 				tt.mockSetup(mockRepo)
@@ -97,7 +98,8 @@ func TestAuthenticateUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(gorm_user.MockUserRepository)
-			svc := NewUserService(mockRepo)
+			secretKey := []byte("secret")
+			svc := NewUserService(mockRepo, string(secretKey))
 
 			if tt.mockSetup != nil {
 				tt.mockSetup(mockRepo)
@@ -165,7 +167,8 @@ func TestUpdatePassword(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(gorm_user.MockUserRepository)
-			svc := NewUserService(mockRepo)
+			secretKey := []byte("secret")
+			svc := NewUserService(mockRepo, string(secretKey))
 
 			if tt.mockSetup != nil {
 				tt.mockSetup(mockRepo)
@@ -209,7 +212,8 @@ func TestDeleteUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(gorm_user.MockUserRepository)
-			svc := NewUserService(mockRepo)
+			secretKey := []byte("secret")
+			svc := NewUserService(mockRepo, string(secretKey))
 
 			if tt.mockSetup != nil {
 				tt.mockSetup(mockRepo)

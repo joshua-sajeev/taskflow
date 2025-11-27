@@ -8,7 +8,6 @@ import (
 	"taskflow/internal/domain/user"
 	"taskflow/internal/dto"
 	"taskflow/internal/repository/gorm/gorm_user"
-	"taskflow/pkg"
 	"taskflow/pkg/jwt"
 	"taskflow/pkg/validator"
 
@@ -17,11 +16,12 @@ import (
 )
 
 type UserService struct {
-	repo gorm_user.UserRepositoryInterface
+	repo      gorm_user.UserRepositoryInterface
+	jwtSecret []byte
 }
 
-func NewUserService(repo gorm_user.UserRepositoryInterface) *UserService {
-	return &UserService{repo: repo}
+func NewUserService(repo gorm_user.UserRepositoryInterface, jwtSecret string) *UserService {
+	return &UserService{repo: repo, jwtSecret: []byte(jwtSecret)}
 }
 
 var _ UserServiceInterface = (*UserService)(nil)
@@ -80,7 +80,7 @@ func (s *UserService) AuthenticateUser(req *dto.AuthRequest) (*dto.AuthResponse,
 		return nil, errors.New("invalid credentials")
 	}
 
-	secretKey := []byte(pkg.GetEnv("JWT_SECRET", "secret-key"))
+	secretKey := s.jwtSecret
 	token, err := jwt.CreateToken(u.ID, u.Email, secretKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create token: %w", err)
